@@ -1,0 +1,37 @@
+Name                                            Stmts   Miss  Cover   Missing
+-----------------------------------------------------------------------------
+__init__.py                                         0      0   100%
+annflux/__init__.py                                 0      0   100%
+annflux/algorithms/__init__.py                      0      0   100%
+annflux/algorithms/embeddings.py                   20      3    85%   32-36, 47
+annflux/data/__init__.py                            0      0   100%
+annflux/data/envdataset/__init__.py                 0      0   100%
+annflux/data/envdataset/data.py                    39      9    77%   35-38, 43-47, 51
+annflux/performance/__init__.py                     0      0   100%
+annflux/performance/basic.py                       61     47    23%   38-103, 107-113, 117-123
+annflux/repo_results_to_embedding.py               64     11    83%   37-38, 46-48, 58-64, 73, 75, 95-96
+annflux/repository/__init__.py                      0      0   100%
+annflux/repository/dataset.py                      65     17    74%   27-31, 41, 43, 62, 76, 100, 104, 113, 117-118, 123, 126-128
+annflux/repository/model.py                        99     47    53%   46, 50, 54, 58, 62, 79, 107-161, 169, 172, 179-182, 185
+annflux/repository/repository.py                  161     50    69%   37-44, 47-57, 60-64, 94, 98, 105, 151-172, 200-201, 207, 213-217, 226, 233, 287, 294, 298, 302, 317, 324
+annflux/repository/resultset.py                    92     36    61%   28-29, 91-97, 99, 108, 112, 116-117, 121, 135-151, 160-179, 182
+annflux/scripts/__init__.py                         0      0   100%
+annflux/scripts/annflux_cli.py                     76      5    93%   152-157, 166, 185, 198
+annflux/scripts/run_tests.py                       71     22    69%   31, 39, 48, 59, 74, 80-82, 89-91, 94-98, 104-106, 111-112, 116
+annflux/shared.py                                  45      1    98%   71
+annflux/tests/__init__.py                           0      0   100%
+annflux/tests/test_cli.py                           5      0   100%
+annflux/tests/test_train.py                        28      0   100%
+annflux/tools/__init__.py                           0      0   100%
+annflux/tools/core.py                              56     16    71%   26-28, 32, 36, 40, 44, 48-56, 66-67
+annflux/tools/data.py                              98     46    53%   114-127, 146-178, 191-201, 209, 217-220, 227-242
+annflux/tools/io.py                                64     27    58%   34, 40-56, 69-74, 81, 87-95, 101
+annflux/tools/mixed.py                             43     31    28%   22-28, 39-49, 53-57, 71-80
+annflux/train_indeed_image.py                     209     90    57%   40-42, 52-53, 56, 60-62, 79-86, 92, 124-148, 152-160, 172-264, 291-293
+annflux/training/__init__.py                        0      0   100%
+annflux/training/annflux/__init__.py                0      0   100%
+annflux/training/annflux/clip.py                  242     24    90%   153, 250-254, 278-298, 308-310, 324-336
+annflux/training/annflux/clip_shared.py            69      4    94%   105, 110-112
+annflux/training/annflux/feature_extractor.py      41      7    83%   48-50, 62, 67, 77, 82
+-----------------------------------------------------------------------------
+TOTAL                                            1648    493    70%

@@ -49,11 +49,6 @@ export HUGGINGFACE_CLIP_NAME={a hugging face CLIP model that supports the peft p
 ```bash
 annflux go ~/annflux/data/envdataset --start_labels Your_label_A Your_label_B Your_label_C`
 ```
-Then
-
-```bash
-basic_ui ~/annflux/data/envdataset
-```
 
 Label some images, then
 
@@ -85,6 +80,6 @@ HIGH
 
 # Changelog
 
-## 1.0.0.0
+## 0.9.2.0
 
-- Final for open source
+- Preparing for open source
