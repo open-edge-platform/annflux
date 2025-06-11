@@ -13,7 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      security-events: write # needed to upload results
     steps:
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -35,7 +34,6 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-          security-events: write # needed to upload results
       - name: Run Bandit scan
         uses: open-edge-platform/anomalib/.github/actions/security/bandit@60d0a886d9c8af5ddba456fa50f75b509905959e
         with:
