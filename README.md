@@ -32,13 +32,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 `annflux go {PROJECT_FOLDER}`
 
-`PROJECT_FOLDER` should have at least a `images` folder 
-
-# Start basic UI
-
-On commandline
-
-`basic_ui {PROJECT_FOLDER}`
+`PROJECT_FOLDER` should have at least a `images` folder
 
 # Example
 
@@ -88,10 +82,6 @@ python run_coverage.py
 
 HIGH 
 - (None)
-
-MEDIUM
-- [MEDIUM-1] Labels cannot be removed or edited in the UI. _Workaround_: edit `label_defs.json` in the project folder and restart UI
-- [MEDIUM-2] Predicted labels with prob>0.50 are not shown for labeled data. _Workaround_: label through the top bar
 
 # Changelog
 
