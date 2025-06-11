@@ -1,4 +1,5 @@
-# Research tool for exploring and annotating large datasets with Active Learning 
+# [AnnFlux] Annotation flux
+## A research tool for exploring and annotating large datasets with Active Learning 
 
 This standalone tool provides a basic interface for interacting with large datasets so that they can be explored and annotated efficiently. 
 
