@@ -1,9 +1,12 @@
 import os
 
-from annflux.ui.basic.run_server import get_version
+
+def get_version():
+    return {"version": "0.9.2.0"}
 
 
 def run_coverage_func():
+    os.makedirs("../release_assets", exist_ok=True)
     os.system(
         f"ruff check . > ../release_assets/ruff_check_{get_version()['version']}.txt"
     )

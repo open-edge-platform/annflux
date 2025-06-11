@@ -28,7 +28,7 @@ from sklearn.model_selection import train_test_split
 from torch import nn, optim
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from transformers import CLIPProcessor, CLIPModel
+from transformers import CLIPModel, CLIPProcessor
 
 from annflux.repository.dataset import Dataset
 from annflux.tools.mixed import get_basic_logger

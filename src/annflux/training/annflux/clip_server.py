@@ -190,8 +190,8 @@ def m(model_folder):
     server = ClipServer(model_folder)
 
     app.run(
-        debug=True,  # str2bool(os.getenv("APP_DEBUG", False)),
-        host="0.0.0.0",
+        debug=False,
+        host="127.0.0.1",
         threaded=True,
         port=int(os.getenv("PORT", "8008")),
     )
