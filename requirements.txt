@@ -11,7 +11,7 @@ scipy~=1.15.2
 scikit-image~=0.25.2
 tensorflow-cpu
 umap-learn~=0.5.7
-keras~=3.9.0
+keras~=3.10.0
 accelerate>=0.26.0
 transformers~=4.49.0
 peft==0.14.0
