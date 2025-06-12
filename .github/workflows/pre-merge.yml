@@ -1,0 +1,44 @@
+name: Pre-merge checks
+
+on:
+  pull_request:
+    branches:
+      - main
+      - "releases/**"
+
+permissions: {}
+
+jobs:
+  zizmor-scan-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Run Zizmor scan
+        uses: open-edge-platform/anomalib/.github/actions/security/zizmor@60d0a886d9c8af5ddba456fa50f75b509905959e
+        with:
+          scan-scope: "changed"
+          severity-level: "MEDIUM"
+          confidence-level: "HIGH"
+          fail-on-findings: true
+  bandit-scan-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Run Bandit scan
+        uses: open-edge-platform/anomalib/.github/actions/security/bandit@60d0a886d9c8af5ddba456fa50f75b509905959e
+        with:
+          scan-scope: "changed"
+          severity-level: "MEDIUM"
+          confidence-level: "HIGH"
+          config_file: ".github/bandit_config.yml"
+          fail-on-findings: true
