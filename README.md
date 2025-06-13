@@ -80,6 +80,10 @@ HIGH
 
 # Changelog
 
+## 0.9.3.0
+
+- Improved test reporting
+
 ## 0.9.2.0
 
 - Preparing for open source

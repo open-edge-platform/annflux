@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import datetime
+import json
 import logging
 import os
 import sys
@@ -39,12 +40,13 @@ class ClipServer(object):
     def load_model(self):
         self.device = "cuda:0"
         torch_dtype = torch.float16
+        variant_name = json.load(open(os.path.join(self.adapter_folder, "adapter_config.json")))["base_model_name_or_path"]
         self.model = CLIPModel.from_pretrained(
-            "openai/clip-vit-base-patch32",
+            variant_name,
             device_map=self.device,
             torch_dtype=torch_dtype,
         )
-        self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        self.processor = CLIPProcessor.from_pretrained(variant_name)
 
         self.model.load_adapter(self.adapter_folder)
 
