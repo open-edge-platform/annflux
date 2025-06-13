@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import time
+from functools import lru_cache
 from typing import List
 
 import numpy as np
@@ -27,12 +28,13 @@ from matplotlib.colors import rgb2hex
 from annflux.tools.mixed import get_basic_logger
 
 
-def canon_(s_: str):
+@lru_cache
+def canon_(s_: str | list[str]) -> str | None:
     """
     Canonizes a multilabel string separated by comma's
     """
     return (
-        ",".join(sorted(s_.split(",")))
+        ",".join(sorted(s_.split(","))) if isinstance(s_, str) else ",".join(sorted(s_))
         if s_ is not None and not pandas.isna(s_)
         else None
     )

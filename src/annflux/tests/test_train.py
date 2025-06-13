@@ -1,4 +1,5 @@
 # Copyright 2025 Intel Corporation
+# Copyright 2025 Naturalis Biodiversity Center
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,29 +12,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import os.path
 import shutil
 import tempfile
 import unittest
 from pathlib import Path
 
-from annflux.data.envdataset.data import EnvDataset
+from annflux.data.bombus_plant_test.data import BombusPlantTest
 from annflux.shared import AnnfluxSource
 from annflux.train_indeed_image import init_folder, add_annotations_and_set
 from annflux.training.annflux.clip import ClipFeatureExtractor
 from annflux.training.annflux.feature_extractor import TrainParameters
 
 
-
 class TestTrain(unittest.TestCase):
 
     def setUp(self):
-        self.data_source = EnvDataset()
+        self.data_source = BombusPlantTest()
         self.data_source.download()
-        self.data_folder = Path(os.path.expanduser("~/annflux/data/envdataset"))
-        if os.path.isdir(self.data_folder):
-            shutil.rmtree(self.data_folder)
+        self.data_folder = Path(os.path.expanduser("~/annflux/data/bombus-plant-test"))
+        shutil.rmtree(self.data_folder)
         self.data_source.copy_to(self.data_folder)
         self.annflux_folder = self.data_folder / "annflux"
         self.annflux_data_path = self.annflux_folder / "annflux.csv"

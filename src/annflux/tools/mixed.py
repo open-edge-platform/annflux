@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+import os
 from typing import Optional, List
 
 
@@ -26,6 +27,10 @@ def remove_sys(list_: Optional[List[str]]):
         if "sys:" not in x_:
             filtered_list.append(x_)
     return filtered_list
+
+
+def get_logger_by_name(name: str, mode: str = "a", level=logging.INFO):
+    return get_logger(os.path.join(os.getenv("LOG_FOLDER", "."), f"{name}.log"), mode, level)
 
 
 def get_logger(filename: str, mode: str = "a", level=logging.INFO) -> logging.Logger:

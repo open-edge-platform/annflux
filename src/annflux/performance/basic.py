@@ -1,4 +1,5 @@
 # Copyright 2025 Intel Corporation
+# Copyright 2025 Naturalis Biodiversity Center
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,9 +14,10 @@
 # limitations under the License.
 import itertools
 import json
+import logging
 import os
 from collections import defaultdict
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 
 import numpy as np
 import pandas
@@ -25,6 +27,8 @@ from sklearn.preprocessing import MultiLabelBinarizer
 from annflux.tools.core import AnnFluxState
 
 MultilabelPrediction = List[Tuple[str]]
+
+logger = logging.getLogger("annflux_server")
 
 
 def compute_performance(
@@ -52,11 +56,11 @@ def compute_performance(
         per_image_true = np.array([int(label_ in x_) for x_ in true_test])
         per_image_predicted = np.array([int(label_ in x_) for x_ in predicted_test])
 
-        precision, recall, fscore, support = precision_recall_fscore_support(
-            per_image_true, per_image_predicted
+        precision, recall, f_score, support = precision_recall_fscore_support(
+            per_image_true, per_image_predicted, zero_division=0.0
         )
         if len(precision) > 1:
-            print(
+            logger.debug(
                 f"{label_} precision={precision[1]:.2f} recall={recall[1]:.2f} {support[1]}"
             )
             detailed_performance_table.append(
@@ -100,7 +104,9 @@ def compute_performance(
         num_uncertain.get(x_, 0) for x_ in out_table.label
     ]
     out_table["num_labeled"] = [num_labeled.get(x_, 0) for x_ in out_table.label]
-    out_table.to_csv(os.path.join(state.working_folder, "detailed_performance.csv"), index=False)
+    out_table.to_csv(
+        os.path.join(state.working_folder, "detailed_performance.csv"), index=False
+    )
 
 
 def write_performance(performance_graph_path, acc_test, num_train_val, num_test):
@@ -113,7 +119,7 @@ def write_performance(performance_graph_path, acc_test, num_train_val, num_test)
         json.dump(j_performance, f, indent=2)
 
 
-def write_performance_key_val(performance_graph_path, key, val):
+def write_performance_key_val(performance_graph_path, key: str, val: Any):
     if os.path.exists(performance_graph_path):
         j_performance = json.load(open(performance_graph_path))
     else:
@@ -121,3 +127,11 @@ def write_performance_key_val(performance_graph_path, key, val):
     j_performance[key] = val
     with open(performance_graph_path, "w") as f:
         json.dump(j_performance, f, indent=2)
+
+
+def get_performance_key_val(performance_graph_path, key: str, default_val=None):
+    if os.path.exists(performance_graph_path):
+        j_performance = json.load(open(performance_graph_path))
+
+        return j_performance.get(key, default_val)
+    return default_val

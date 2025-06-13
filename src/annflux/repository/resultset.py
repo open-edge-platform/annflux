@@ -182,3 +182,9 @@ class Resultset(RepositoryObject):
         self.analysis_directory = create_directory(
             os.path.join(self.path, f"analysis-{self.analysis_version}")
         )
+
+    def get_path_for(self, filename: str):
+        """
+        Returns a path for `filename` in the Resultset
+        """
+        return os.path.join(self.path, filename)

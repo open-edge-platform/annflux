@@ -1,4 +1,5 @@
 # Copyright 2025 Intel Corporation
+# Copyright 2025 Naturalis Biodiversity Center
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,6 +19,7 @@ from tempfile import mkdtemp
 
 from annflux.data.envdataset.data import EnvDataset
 # see: https://pythontest.com/testing-argparse-apps/ for inspiration
+from annflux.data.bombus_plant_test.data import BombusPlantTest
 from annflux.scripts.annflux_cli import execute
 
 test_type = os.getenv("TEST_TYPE", "user")
@@ -34,7 +36,6 @@ if test_type not in valid_test_types:
 def _test_go(folder, start_labels):
     print("Testing go command")
     command_ = f"go {folder} --start_labels {start_labels}"
-    print(f"{command_=}")
     if test_type != "pytest":
         os.system(f"annflux {command_}")
     else:
@@ -64,18 +65,18 @@ def _test_export(test_data_path) -> str:
 
 def run_cli_tests():
     print("START")
-    data_source = EnvDataset()
+    data_source = BombusPlantTest()
     data_source.download()
-    test_data_path = os.path.expanduser("~/annflux/data/envdataset")
+    test_data_path = os.path.expanduser("~/annflux/data/bombus-plant-test")
     shutil.rmtree(test_data_path)
     data_source.copy_to(test_data_path)
     annflux_dir = os.path.join(test_data_path, "annflux")
     if os.path.isdir(annflux_dir):
         shutil.rmtree(annflux_dir)
     try:
-        _test_go(test_data_path, ["A", "B", "C"])
+        _test_go(test_data_path, ["No plant", "Flowering", "Vegetative"])
         assert os.path.isdir(
-            os.path.expanduser("~/annflux/data/envdataset/annflux")
+            os.path.expanduser("~/annflux/data/bombus-plant-test/annflux")
         )
     except:  # noqa
         print("test_go failed")

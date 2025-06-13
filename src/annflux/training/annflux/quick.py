@@ -1,4 +1,5 @@
 # Copyright 2025 Intel Corporation
+# Copyright 2025 Naturalis Biodiversity Center
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import json
+import logging
 import os
 import time
 from collections import defaultdict
@@ -26,16 +28,22 @@ from annflux.repository.repository import Repository
 from annflux.repository.resultset import Resultset
 from annflux.algorithms.feature_reconstruction_error import compute_fre
 from annflux.algorithms.most_needed import compute_most_needed
-from annflux.performance.basic import compute_performance, write_performance_key_val
+from annflux.performance.basic import (
+    compute_performance,
+    write_performance_key_val,
+    get_performance_key_val,
+)
 from annflux.tools.core import AnnFluxState
 from annflux.tools.data import canon_, color_and_label
 from annflux.tools.io import numpy_load
 from annflux.tools.mixed import remove_sys
 
 
+min_prev_near_labeled_perc = 1.0  # TODO: configurable
+
+
 def quick_reclassification(
-    state: AnnFluxState,
-    knn_type="quick",
+    state: AnnFluxState, knn_type="quick", logger: logging.Logger = None
 ):
     """
     Trains a quick new model using kNN
@@ -43,7 +51,7 @@ def quick_reclassification(
     start_time = time.time()
 
     repo = Repository(os.path.join(state.working_folder, "datarepo"))
-    result_set = repo.get(label=Resultset, tag="unseen").last()
+    result_set: Resultset = repo.get(label=Resultset, tag="unseen").last()
     folder = result_set.path
 
     data = pandas.read_csv(
@@ -59,12 +67,7 @@ def quick_reclassification(
         test_uids = set(json.load(f)["test"])
     print("instant_reclassification 3", time.time())
 
-    custom_path = f"{folder}/custom.npz"
-    custom2_path = f"{folder}/custom.npy"
     reload_features = state.cache_for != result_set.entry.uid
-    recompute = state.version_for_recompute != (
-        result_set.entry.uid + "_" + str(state.trained_for_version_pre)
-    )
     print(
         "version_for_recompute",
         state.version_for_recompute,
@@ -74,12 +77,7 @@ def quick_reclassification(
     if reload_features:
         state.g_quick_status = "Loading features"
 
-        if os.path.exists(custom_path):
-            state.features = numpy_load(custom_path, "arr_0")
-        elif os.path.exists(custom2_path):
-            state.features = np.load(custom2_path)
-        else:
-            state.features = numpy_load(f"{folder}/last_full.npz", "lastFull")
+        state.features = numpy_load(f"{folder}/last_full.npz", "lastFull")
 
     print(len(data), len(state.features))
     assert len(data) == len(state.features)
@@ -169,7 +167,8 @@ def quick_reclassification(
 
     # print("labeled_indices", labeled_indices)
     k = 110
-    if recompute:
+    knn_results_path = result_set.get_path_for("knn_results.npz")
+    if not os.path.exists(knn_results_path):
         state.g_quick_status = "computing knn index"
         knn_index = faiss.index_factory(
             state.features.shape[1],
@@ -185,6 +184,19 @@ def quick_reclassification(
         knn_index.add(state.features)
 
         state.all_distances, state.all_indices = knn_index.search(state.features, k=k)
+
+        np.savez(
+            knn_results_path,
+            all_distances=state.all_distances,
+            all_indices=state.all_indices,
+        )
+    else:
+        logger.info(f"Loading kNN results from {knn_results_path}")
+        knn_results = np.load(knn_results_path)
+        state.all_distances, state.all_indices = (
+            knn_results["all_distances"],
+            knn_results["all_indices"],
+        )
 
     state.cache_for = result_set.entry.uid
     state.version_for_recompute = (
@@ -220,7 +232,7 @@ def quick_reclassification(
     quicker_updates = int(
         os.getenv("QUICKER_UPDATES", 0)
     )  # 0 = off, 1 = display only, 2 = display + knn
-    new_labeled_nn_idx: Set[int] = None
+    new_labeled_nn_idx: Set[int] | None = None
     new_labeled_nn_uids = None
     quicker_updates = (
         quicker_updates
@@ -230,10 +242,10 @@ def quick_reclassification(
     if quicker_updates:
         # get indices of new_labeled_uids
         new_labeled_idx = data[data.uid.isin(state.new_labeled_uids)].index
-        print("new_labeled_uids", state.new_labeled_uids)
-        print("new_labeled_idx", new_labeled_idx)
+        logger.info(f"new_labeled_uids={state.new_labeled_uids}")
+        logger.info(f"new_labeled_idx={new_labeled_idx}")
         new_labeled_nn_idx = set(state.all_indices[new_labeled_idx].flatten())
-        print("new_labeled_nn_idx", len(new_labeled_nn_idx))
+        logger.info(f"new_labeled_nn_idx={len(new_labeled_nn_idx)}")
         new_labeled_nn_uids = data[data.index.isin(new_labeled_nn_idx)].uid
     #
     # optimize_weight_exponent_func(state, annotations, data, distances, indices)
@@ -245,21 +257,21 @@ def quick_reclassification(
             data["label_possible"] = ""
             data["score_possible"] = None
         else:
-            data.loc[new_labeled_nn_idx, "label_predicted"] = None
-            data.loc[new_labeled_nn_idx, "scores_predicted"] = None
-            data.loc[new_labeled_nn_idx, "label_possible"] = ""
-            data.loc[new_labeled_nn_idx, "score_possible"] = None
+            data.loc[list(new_labeled_nn_idx), "label_predicted"] = None
+            data.loc[list(new_labeled_nn_idx), "scores_predicted"] = None
+            data.loc[list(new_labeled_nn_idx), "label_possible"] = ""
+            data.loc[list(new_labeled_nn_idx), "score_possible"] = None
     else:
         data["label_predicted"] = None
         data["scores_predicted"] = None
         data["label_possible"] = None
         data["score_possible"] = None
-    print(f"Using knn_rank_exponent={state.knn_rank_exponent}")
     # - make predictions for labeled indices
+    logger.info(f"Using knn_rank_exponent={state.knn_rank_exponent}")
     indices_ = indices
     distances_ = distances
     labeled_indices_ = state.labeled_indices
-    print("labeled_indices_", len(labeled_indices_))
+    logger.info(f"labeled_indices_={len(labeled_indices_)}")
     if quicker_updates > 1:
         idx_sel = [
             i_
@@ -269,8 +281,11 @@ def quick_reclassification(
         indices_ = indices_[idx_sel]
         distances_ = distances_[idx_sel]
         labeled_indices_ = np.array(labeled_indices_)[idx_sel].tolist()
+        logger.info(
+            f"quicker_updates: labeled_indices_ before test_indices={len(labeled_indices_)}"
+        )
         labeled_indices_.extend(test_indices)
-    print("labeled_indices_", len(labeled_indices_))
+        logger.info(f"quicker_updates: labeled_indices_={len(labeled_indices_)}")
     state.g_quick_status = "predicting labeled"
     make_predictions(
         annotations,
@@ -285,29 +300,33 @@ def quick_reclassification(
         skip_first=True,
         knn_rank_exponent=state.knn_rank_exponent,
     )
-
-    state.g_quick_status = "computing most needed"
-    counter_of_most_need, near_labeled_indices, near_labeled_perc = compute_most_needed(
-        state.all_indices,
-        data,
-        k,
-        state.label_array,
-        state.labeled_indices,
-        test_indices,
-        iterations=9 if not quicker_updates else 5,
+    prev_near_labeled_perc = get_performance_key_val(
+        state.performance_path, "percentage_near_labeled", -1.0
     )
-    write_performance_key_val(
-        state.performance_path, "percentage_near_labeled", near_labeled_perc
-    )
-
-    # print("near_labeled_indices", near_labeled_indices)
+    print("prev_near_labeled_perc", prev_near_labeled_perc)
+    if prev_near_labeled_perc < min_prev_near_labeled_perc:
+        state.g_quick_status = "computing most needed"
+        counter_of_most_need, near_labeled_indices, near_labeled_perc = (
+            compute_most_needed(
+                state.all_indices, state.labeled_indices, state.features
+            )
+        )
+        write_performance_key_val(
+            state.performance_path, "percentage_near_labeled", near_labeled_perc
+        )
+    else:
+        logger.warning(
+            f"Skipping most needed because {prev_near_labeled_perc=}<{min_prev_near_labeled_perc}"
+        )
+        near_labeled_indices = np.arange(len(state.all_distances))
+        counter_of_most_need = {}
     time_start = time.time()
     # distances, indices = knn_index.search(features[near_labeled_indices], k=k)
     distances, indices = (
         state.all_distances[near_labeled_indices],
         state.all_indices[near_labeled_indices],
     )
-    print("knn near_labeled", time.time() - time_start)
+    logger.info(f"knn near_labeled={time.time() - time_start}")
     data["entropy"] = -np.inf
     data["al_measure"] = len(data) + 1
     data["most_needed"] = len(data) + 1
@@ -346,9 +365,9 @@ def quick_reclassification(
     data.label_true = data.label_true.apply(lambda x_: canon_(x_))
     # FRE
     state.g_quick_status = "computing FRE"
-    compute_fre(annotations, data, state.features, state.labeled_indices, test_uids)
+    compute_fre(state.label_array, data, state.features, state.labeled_indices)
     # history
-
+    state.g_quick_status = "setting Most needed"
     #
     blurp = sorted(counter_of_most_need.items(), key=lambda t_: -t_[1])
     for i_, (most_needed_i, most_needed) in enumerate(blurp):
@@ -361,6 +380,7 @@ def quick_reclassification(
             break
 
     #
+    state.g_quick_status = "computing performance"
     compute_performance(predicted_test, true_test, state, annotations, data)
     state.g_quick_status = "coloring and labelling"
     color_and_label(

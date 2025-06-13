@@ -99,7 +99,6 @@ def train_then_features(
             class_to_label_path = extractor.train_peft(
                 data, model_out_folder, train_parameters
             )
-            print(model_out_folder)
             repo_model = ClipModel(model_out_folder, class_to_label_path)
             repo.commit(
                 repo_model, ancestors=[dataset], tag="trained", allow_mixed_tags=True

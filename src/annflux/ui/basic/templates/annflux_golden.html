@@ -1,0 +1,1540 @@
+<!--
+Copyright 2025 Naturalis Biodiversity Center
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<!DOCTYPE html>
+<script src="https://d3js.org/d3.v4.js"></script>
+<script
+  src="https://code.jquery.com/jquery-3.7.1.min.js"
+  integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+  crossorigin="anonymous"
+></script>
+<script src="https://cdn.jsdelivr.net/npm/underscore@1.13.7/underscore-umd-min.js"></script>
+<script
+  type="text/javascript"
+  src="https://golden-layout.com/files/latest/js/goldenlayout.min.js"
+></script>
+<script type="text/javascript" src="/static/annflux.js"></script>
+<script type="text/javascript" src="/static/annflux_layout.js"></script>
+<link
+  type="text/css"
+  rel="stylesheet"
+  href="https://golden-layout.com/files/latest/css/goldenlayout-base.css"
+/>
+<link
+  type="text/css"
+  rel="stylesheet"
+  href="https://golden-layout.com/files/latest/css/goldenlayout-dark-theme.css"
+/>
+<link type="text/css" rel="stylesheet" href="/static/annflux.css" />
+
+<body>
+  <div id="layoutContainer"></div>
+</body>
+<script>
+  let gLayout = "label"; // "label"
+  var myLayout;
+  // localStorage.clear();
+  savedState = localStorage.getItem("savedState");
+  savedLayout = localStorage.getItem("savedLayout");
+
+  if (savedState !== null && savedLayout == gLayout) {
+    logUI("Loading custom layout state");
+    myLayout = new GoldenLayout(JSON.parse(savedState));
+  } else {
+    let layoutDef = new Map([
+      ["partLabel", partLabelConfig],
+      ["label", labelConfig],
+    ]).get(gLayout);
+    console.log("layoutDef", layoutDef);
+    myLayout = new GoldenLayout(layoutDef);
+  }
+
+  localStorage.setItem("savedLayout", gLayout);
+
+  function closeFullscreen() {}
+
+  // myLayout = new GoldenLayout(labelConfig);
+  let mapContainer = null;
+  let labelContainer = null;
+  let galleryContainer = null;
+  let fullImageContainer = null;
+  let controlContainer = null;
+
+  function saveState() {
+    var state = JSON.stringify(myLayout.toConfig());
+    localStorage.setItem("savedState", state);
+    location.reload();
+  }
+
+  function persistentToggle(elID) {
+    $(`#${elID}`).toggle();
+    localStorage.setItem(`${elID}_display`, $(`#${elID}`).css("display"));
+  }
+
+  myLayout.registerComponent("Map", function (container, componentState) {
+    if (componentState.label == "A") {
+      container.getElement().html(mapHtml);
+      mapContainer = container;
+    }
+  });
+  myLayout.registerComponent("Labels", function (container, componentState) {
+    if (componentState.label == "B") {
+      labelContainer = container;
+      container.getElement().html(`<div id="panel">
+      <span id="labelPanel"><b style="color: red">Add labels first!</b></span>
+      <br/><a class="noButton" href="#" onclick="persistentToggle('addLabelPanel')"><img src="/static/newlabel.svg" width="24px"></a>
+      <div id="addLabelPanel">
+        <a href="javascript:void(0)" onclick="setLabelParent(null)">+</a>
+        <input type="text" id="newLabel" /><-<input
+          type="text"
+          id="parentLabel"
+          value="null"
+        />
+        <input type="button" value="add" onclick="addLabel()" />
+        <a href="/exclusivity">Exclusivity</a>
+        <a href="/label_provider">Label provider</a>
+      </div>
+    </div>`);
+    }
+  });
+  myLayout.registerComponent("Gallery", function (container, componentState) {
+    if (componentState.label == "C") {
+      galleryContainer = container;
+      container.getElement()
+        .html(`<div id="gallery" tabindex="0" style="position:relative">
+    <div id="fullscreen" style="position: absolute; max-width: 50%; display:none">
+      <img src="" style="max-width: 100%" />
+      <a href="#" onclick="$('#fullscreen').hide();">x</a>
+    </div>
+      <a href="#" onclick="submitLabeledGallery(this)"
+        >Save all labels/images</a
+      >
+      <a href="#" onclick="refresh(this)">Refresh</a>
+      <a href="#" onclick="deselectGallery(this)">Deselect</a>
+      <a href="#" onclick="highlightGalleryInMap(this)">Highlight gallery</a>
+    </div>
+    `);
+    }
+  });
+  myLayout.registerComponent("Control", function (container, componentState) {
+    if (componentState.label == "D") {
+      controlContainer = container;
+      container.getElement().html(controlHtml);
+    }
+  });
+  myLayout.registerComponent("FullImage", function (container, componentState) {
+    if (componentState.label == "E") {
+      fullImageContainer = container;
+      container
+        .getElement()
+        .html(
+          `<div id="fullImageWrapper" class="img-overlay-wrap"><img src='something' id="fullImage"/></div>`
+        );
+    }
+  });
+
+  myLayout.init();
+
+  let gLabeled = new Map();
+  let selection = [];
+  let gallerySelection = [];
+  let zoom = null;
+  let x = null;
+  let y = null;
+  let time_x = null;
+  let time_y = null;
+  let svg = null;
+  let g = null;
+  let width = null;
+  let height = null;
+  let dots = null;
+  let lastZoomUpdate = new Date().getTime() / 1000;
+  let numUpdatesActive = 0;
+  let data = null;
+  let gallery = null;
+  let galleryImages = null;
+  let shortcuts = new Map();
+  let g_labels = []; // list of (child, parent) names
+  var idleTime = 0;
+  // localStorage.setItem("activeTime", 0);
+  var activeTime = parseInt(localStorage.getItem("activeTime") ?? 0);
+  let trained_for_version = null;
+  const exclusivity = new Map();
+  const childToParent = new Map();
+
+  function addSpaces() {
+    d3.selectAll(".quick_label").each(function () {
+      var t = document.createElement("span");
+      t.innerHTML = " ";
+      this.parentNode.insertBefore(t, this.nextSibling);
+    });
+    d3.selectAll(".quick_label_true").each(function () {
+      var t = document.createElement("span");
+      t.innerHTML = " ";
+      this.parentNode.insertBefore(t, this.nextSibling);
+    });
+    d3.selectAll(".quick_label_predicted").each(function () {
+      var t = document.createElement("span");
+      t.innerHTML = " ";
+      this.parentNode.insertBefore(t, this.nextSibling);
+    });
+  }
+
+  function createQuickLabel(imageId, class_, labels, bla) {
+    d3.select("div#gallery-label-" + imageId)
+      .selectAll("*")
+      .remove();
+    if (bla) {
+      d3.select("div#gallery-label-" + imageId)
+        .selectAll("a")
+        .data(labels)
+        .enter()
+        .append("a")
+        .html(function (d) {
+          return `${d}`;
+        })
+        .attr("class", class_)
+        .attr("onclick", function (d) {
+          return `labelInGallery('${imageId}', '${d}', false)`;
+        })
+        .attr("href", `javascript:void(0)`);
+    }
+    addSpaces();
+  }
+
+  function drawGallery(show_data) {
+    const as_ranking_column = urlParams.get("as_ranking_column");
+    //show_data.sort((a, b) => a.score_predicted - b.score_predicted);
+    const rank_modifier = urlParams.get("invert_ranking") == "on" ? -1 : +1;
+    console.log("drawGallery", as_ranking_column, rank_modifier);
+    show_data = show_data.sort(
+      (a, b) => rank_modifier * (a[as_ranking_column] - b[as_ranking_column])
+    );
+    console.log("drawGallery", show_data);
+    gallery.selectAll("div.gallery").remove();
+    let galleryImageWidth = "300px";
+    galleryImages = gallery
+      .selectAll("gallery_images")
+      .data(show_data)
+      .enter()
+      .append("div")
+      .attr("class", "gallery")
+      .attr("id", function (d) {
+        return "gallery-" + d.uid;
+      })
+      .style("display", "inline-block")
+      .style("width", galleryImageWidth)
+
+      .append("img")
+      .attr("title", function (d) {
+        return (
+          d.labeled +
+          " " +
+          Math.round(d.score_predicted * 100, 0) +
+          " " +
+          Math.round(d.score_true * 100, 0)
+        );
+      })
+      .attr("src", function (d) {
+        return "/images/thumbnail/" + d.uid;
+      })
+      .attr("width", galleryImageWidth);
+    d3.selectAll("div.gallery img").on("click", selectImageGallery);
+    d3.selectAll("div.gallery img").on("dblclick", altImageAction);
+    // create container for gallery labels
+    galleryImages.each((d, i) => {
+      d3.select("div#gallery-" + d.uid)
+        .append("div")
+        .attr("id", "gallery-label-" + d.uid)
+        .attr("class", "gallery-label")
+        .attr("data-id", d.uid)
+        .attr("data", d.labeled == 0 ? d.label_predicted : d.label_true);
+    });
+    // create per image (quick) labels
+    let labelsFromStorage = null;
+    if (localStorage.getItem("labeled")) {
+      labelsFromStorage = JSON.parse(localStorage.getItem("labeled"));
+      logUI("Restored labeled from local storage", 1);
+    }
+
+    galleryImages.each((d2, i) => {
+      let labelsFor = (
+        d2.labeled == 0 ? d2.label_predicted : d2.label_true
+      ).split(",");
+      if (labelsFromStorage && d2.uid in labelsFromStorage) {
+        labelsFor = labelsFromStorage[d2.uid].split(",");
+      }
+      createQuickLabel(
+        d2.uid,
+        d2.labeled == 0 ? "quick_label_predicted" : "quick_label_true",
+        labelsFor,
+        true
+      );
+    });
+    // button for removing all labels
+    galleryImages.each((d, i) => {
+      d3.select("div#gallery-" + d.uid)
+        .append("a")
+        .attr("href", "javascript:void(0)")
+        .attr("onclick", "clearLabelInGallery(this)")
+        .attr("data-id", d.uid)
+        .html("x");
+    });
+    // ?
+    galleryImages.each((d, i) => {
+      d3.select("div#gallery-" + d.uid)
+        .append("div")
+        // .attr("max-width", "200px")
+        // .style("flex-basis", "200px")
+        .attr("id", "labels-" + d.uid);
+    });
+    console.log("galleryImages.node().label_possible");
+    // predicted (possible) labels
+    try {
+      galleryImages.each((d2, i) => {
+        d3.select("div#labels-" + d2.uid)
+          .selectAll("a")
+          .data(zip(d2.label_possible.split(","), d2.score_possible.split(",")))
+          .enter()
+          .append("a")
+          .html(function (d) {
+            return `${d[0]}(${d[1]})`;
+          })
+          .attr("class", "quick_label")
+          .attr("onclick", function (d) {
+            return `labelInGallery('${d2.uid}', '${d[0]}', false, event)`;
+          })
+
+          .attr("href", `javascript:void(0)`);
+      });
+    } catch (error) {}
+    // }
+
+    addSpaces();
+
+    gallerySelection = [];
+  }
+
+  function zip(a, b) {
+    return a.map(function (e, i) {
+      return [e, b[i]];
+    });
+  }
+
+  function toggleMapImageDisplay() {
+    d3.selectAll("image").style("visibility", "hidden");
+    console.log(d3.selectAll("image").style("visibility"));
+  }
+
+  function selectImage(event) {
+    let image = d3.select("image#map-" + event.uid);
+    if (!selection.includes(event.uid)) {
+      image.style("outline", "1px solid red");
+      selection.push(event.uid);
+    } else {
+      image.style("outline", "");
+      let new_selection = [];
+      for (const x of selection) {
+        if (x != event.uid) {
+          new_selection.push(x);
+        }
+      }
+      selection = new_selection;
+    }
+    console.log("map selection", selection);
+    //
+    let show_data = [];
+    for (const d of data) {
+      if (selection.includes(d.uid)) {
+        show_data.push(d);
+      }
+    }
+    drawGallery(show_data);
+  }
+
+  function selectImageGallery(event) {
+    let imageBox = d3.select("div.gallery#gallery-" + event.uid);
+    if (d3.event.shiftKey) {
+      // multiple select
+      if (!gallerySelection.includes(event.uid)) {
+        imageBox.style("outline", "1px solid red");
+        gallerySelection.push(event.uid);
+      } else {
+        imageBox.style("outline", "");
+        let new_selection = [];
+        for (const x of gallerySelection) {
+          if (x != event.uid) {
+            new_selection.push(x);
+          }
+        }
+        gallerySelection = new_selection;
+      }
+    } else {
+      // single select
+      const selected = gallerySelection.includes(event.uid);
+      if (gallerySelection.length > 0) {
+        deselectGallery();
+      }
+      if (!selected) {
+        imageBox.style("outline", "1px solid red");
+        gallerySelection.push(event.uid);
+      } else {
+        imageBox.style("outline", "");
+        gallerySelection = [];
+      }
+      //
+      if (gLayout == "partLabel") {
+        showFullImage(event.uid);
+      }
+    }
+    // $("#fullscreen img").attr("src", "/images/thumbnail/" + event.uid);
+    // $("#fullscreen").show()
+    console.log("gallerySelection", gallerySelection);
+    // $("#individualImage").attr("src", "/images/thumbnail/" + event.uid);
+    // $("#individualPredictedLabel").html(event.label_predicted);
+    // $("#individualPredictedProbability").html(event.score_predicted);
+    // $("#individualId").html(event.uid);
+    //
+    $(".label_panel").css("font-weight", "");
+    for (const uid of gallerySelection) {
+      let labelString = d3.select("#gallery-label-" + uid).attr("data");
+      if (labelString == "n/a") {
+        labelString = "";
+      }
+      const labels = labelString.split(",");
+      for (const label of labels) {
+        $(".label_panel:contains('" + label + "')").css("font-weight", "bold");
+      }
+    }
+    //
+    if (d3.event.ctrlKey) {
+      let dot = d3.select("#dot-" + event.uid);
+      x_ = x(event.e_0);
+      y_ = y(event.e_1);
+      // dot.transition().duration(500).style("fill", "blue").transition().duration(500).style("fill", "red");
+      // dot
+      //   .transition()
+      //   .duration(500)
+      //   .attr("r", 20)
+      //   .transition()
+      //   .duration(500)
+      //   .attr("r", 3);
+
+      const trans = d3.zoomIdentity
+        .translate(width / 2, height / 2)
+        .scale(30)
+        .translate(-x_, -y_);
+      console.log("trans", trans);
+      svg
+        // .select("g")
+        // .transition()
+        // .duration(750)
+        .call(
+          zoom.transform,
+          trans
+          // d3.pointer(event)
+        );
+      // d3.select("svg g").attr("transform", trans);
+      console.log(
+        "foekoe",
+        d3.zoomTransform(svg.select("g")),
+        d3.zoomTransform(svg),
+        d3.zoomTransform(zoom)
+      );
+    }
+  }
+
+  function labelInMap(el) {
+    selection.forEach((x, i) => gLabeled.set(x, el.innerText));
+    $("/label", JSON.stringify(Object.fromEntries(gLabeled)));
+    console.log("label - selection", selection);
+    for (const x of selection) {
+      d3.select("image#" + x).style("display", "none");
+    }
+    selection = [];
+    console.log(gLabeled);
+  }
+
+  function playMedia(event) {
+    console.log(`/sounds/${event.uid}`);
+    selectImageGallery(event);
+    var audio = new Audio(`/sounds/${event.uid}`);
+    audio.play();
+  }
+
+  function altImageAction(event) {
+    //TODO: re-add sound
+    const img = $(`#gallery-${event.uid} img`);
+    let curLayer = img.attr("data-curLayer");
+    console.log("img", img, curLayer);
+    if (curLayer === undefined || curLayer == "masked") {
+      curLayer = "original";
+      img.attr("src", `/images/original/thumbnail/${event.uid}`);
+    } else if (curLayer == "original") {
+      curLayer = "mask";
+      img.attr("src", `/images/mask/thumbnail/${event.uid}`);
+    } else if (curLayer == "mask") {
+      curLayer = "masked";
+      img.attr("src", `/images/thumbnail/${event.uid}`);
+    }
+    img.attr("data-curLayer", curLayer);
+    selectImageGallery(event);
+  }
+
+  function showFullImage(uid) {
+    let fullImageId = "";
+    const tokens = uid.split("_");
+    for (let i = 0; i < tokens.length - 1; i++) {
+      fullImageId += tokens[i];
+      if (i < tokens.length - 2) {
+        fullImageId += "_";
+      }
+    }
+    $("#fullImage").attr("src", `/images/full/${fullImageId}`);
+  }
+
+  function labelInGallery(uid, selectedLabel, multipleSelected, event) {
+    let labelString = d3.select("#gallery-label-" + uid).attr("data");
+    if (labelString == "n/a") {
+      labelString = "";
+    }
+    if (event === undefined) {
+      undetermined = false;
+    } else {
+      undetermined = event.ctrlKey;
+    }
+    const labels = labelString.split(",");
+    console.log(labels);
+    if (labels.includes(selectedLabel)) {
+      if (!multipleSelected) {
+        // remove label
+        labelString = "";
+        for (const label2 of labels) {
+          if (label2 != selectedLabel && label2 != "n/a") {
+            labelString += (labelString.length > 0 ? "," : "") + label2;
+          }
+        }
+      }
+      // TODO: remove child when parent is removed
+    } else {
+      let newLabels = [];
+      for (const label2 of labels) {
+        let removedLabel = null;
+        if (exclusivity.has(selectedLabel)) {
+          if (
+            !(
+              exclusivity.get(selectedLabel).indexOf(label2) > -1 ||
+              exclusivity.get(selectedLabel) == "*"
+            )
+          ) {
+            newLabels.push(label2);
+          } else {
+            removedLabel = label2;
+          }
+        } else if (exclusivity.has("*")) {
+          if (exclusivity.get("*") != label2) {
+            newLabels.push(label2);
+          } else {
+            removedLabel = label2;
+          }
+        } else {
+          newLabels.push(label2);
+        }
+      }
+      newLabels.push(!undetermined ? selectedLabel : selectedLabel + "=?");
+      // add ancestors for child
+      let childLabel = selectedLabel;
+      while (childToParent.has(childLabel)) {
+        let parentLabel = childToParent.get(childLabel);
+        if (!labels.includes(parentLabel)) {
+          newLabels.push(parentLabel);
+        }
+        childLabel = parentLabel;
+      }
+      //
+      labelString = "";
+      for (const label2 of newLabels) {
+        labelString += (labelString.length > 0 ? "," : "") + label2;
+      }
+    }
+    console.log("labelString", labelString);
+    d3.select("#gallery-label-" + uid).attr("data", labelString);
+    d2 = d3.select("#gallery-" + uid).data()[0];
+    createQuickLabel(
+      d2.uid,
+      d2.labeled == 0 ? "quick_label_predicted" : "quick_label_true",
+      labelString.length > 0 ? labelString.split(",") : [],
+      true
+    );
+    //
+    setLabeledGlobal();
+    console.log(gLabeled);
+    console.log("here", JSON.stringify(Object.fromEntries(gLabeled)));
+    localStorage.setItem(
+      "labeled",
+      JSON.stringify(Object.fromEntries(gLabeled))
+    );
+    // $("#ui_log_last").html("Stored labeled in local storage");
+    logUI("Stored labeled in local storage");
+  }
+
+  function logUI(message, logLevel) {
+    if (logLevel === undefined) {
+      logLevel = 0;
+    }
+    $("#ui_log_last").html(message);
+    $("#ui_log_last").css("color", logLevel == 0 ? "white" : "orange");
+  }
+
+  function massLabelInGallery(label, multipleSelected) {
+    console.log("massLabelInGallery - selection", gallerySelection);
+    // const label = el.innerText;
+    for (const uid of gallerySelection) {
+      labelInGallery(uid, label, multipleSelected);
+      // d3.select("div.gallery#gallery-" + uid).style("outline", "");
+    }
+
+    // gallerySelection = [];
+    console.log(gallerySelection);
+  }
+
+  function labelDelegate(el) {
+    if (selection.length > 0 && false) {
+      labelInMap(el);
+    } else if (gallerySelection.length > 0) {
+      massLabelInGallery(el.innerText, gallerySelection.length > 1);
+    } else {
+      //d3.selectAll(".gallery-label").html(el.innerText);
+    }
+  }
+
+  function setLabeledGlobal() {
+    /*
+        Stores the current labels for the gallery in the global `gLabeled` variable
+        */
+    d3.selectAll(".gallery-label").each((x, i) => {
+      const label = $("#gallery-label-" + x.uid).attr("data");
+      gLabeled.set(x.uid, label);
+    });
+    console.log("labeled", gLabeled);
+  }
+
+  function shardFlux(force) {
+    /*
+    RELOAD=YES
+    */
+    if (urlParams.get("flux_mode") == "active_learning_shard") {
+      const label_predicted_url = urlParams.get("label_predicted");
+      if (
+        label_predicted_url == null ||
+        label_predicted_url === undefined ||
+        force
+      ) {
+        const min_ = 100; //TODO
+        let shards = new Array();
+        d3.csv("/detailed_performance/data", function (data_) {
+          console.log("detailed_performance", data_);
+          let total = 0;
+          for (row of data_) {
+            row.num_predicted =
+              parseInt(row.num_predicted_certain) +
+              parseInt(row.num_predicted_uncertain);
+            total += row.num_predicted;
+          }
+          const max_ = 0.1 * total;
+          for (row of data_) {
+            console.log(min_, row.num_predicted, max_);
+            if ((row.num_predicted >= min_) & (row.num_predicted <= max_)) {
+              shards.push(row);
+            }
+          }
+          // random sample, TODO proper
+          shards = _.shuffle(shards);
+          for (const row of shards) {
+            if (parseFloat(row.precision) < Math.random()) {
+              // alert(row.label);
+              $("#label_predicted").val(row.label.toLowerCase());
+              changeOption(document.getElementById("label_predicted"));
+              break;
+            }
+          }
+
+          console.log("total", total, "shards", shards);
+        });
+      }
+    }
+  }
+
+  function submitLabeledGallery() {
+    $("#loading_circle").toggle();
+    setLabeledGlobal();
+    console.log(JSON.stringify(Object.fromEntries(gLabeled)));
+    $.post("/label", JSON.stringify(Object.fromEntries(gLabeled)))
+      .done(function (data) {
+        localStorage.removeItem("labeled");
+        shardFlux(true);
+        location.reload();
+      })
+      .fail(function (e) {
+        alert(
+          "Failed to save labels, please contact laurens.hogeweg@naturalis.nl"
+        );
+      });
+  }
+
+  function refresh() {
+    $("#loading_circle").toggle();
+    $.post("/label", JSON.stringify(Object.fromEntries(new Map())))
+      .done(function (data) {
+        location.reload();
+      })
+      .fail(function (e) {
+        alert(
+          "Failed to save labels, please contact laurens.hogeweg@naturalis.nl"
+        );
+      });
+  }
+
+  let urlOptions = new Map();
+  const options = [
+    "label_predicted",
+    "label_true",
+    "label_undetermined",
+    "as_ranking_column",
+    "show_labeled",
+    "color_map",
+    "not_label_true",
+    "not_label_predicted",
+    "invert_ranking",
+    "num_in_gallery",
+    "ignore_double_checked",
+    "linear_auto_train",
+    "flux_mode",
+  ];
+  const urlParams = new URLSearchParams(window.location.search);
+
+  $(document).ready(function () {
+    $.get("/performance", function (data) {
+      renderPerformance(data);
+    });
+    $.get("/label_defs", function (data) {
+      g_labels = data["labels"];
+
+      for (const label of g_labels) {
+        if (label[1] != "null") {
+          childToParent.set(label[0], label[1]);
+        }
+      }
+      console.log(childToParent);
+      const parentToChildren = invertMap(childToParent);
+      console.log("invertMap", parentToChildren);
+
+      //
+      d3.csv("/exclusivity/data", function (data) {
+        data.forEach(function (x, i) {
+          if (!exclusivity.get(x.left)) {
+            exclusivity.set(x.left, []);
+          }
+          exclusivity.get(x.left).push(x.right);
+          //
+          if (!exclusivity.get(x.right)) {
+            exclusivity.set(x.right, []);
+          }
+          exclusivity.get(x.right).push(x.left);
+        });
+        console.log("exclusivity", exclusivity);
+        //
+        for (const [left, right] of exclusivity) {
+          excludeDescendants(left, right, parentToChildren, exclusivity);
+        }
+        console.log("exclusivity", exclusivity);
+      });
+      //
+
+      for (const label of g_labels) {
+        for (const char of label[0].toLocaleLowerCase()) {
+          if (
+            !shortcuts.has(char) &&
+            char != " " &&
+            char != "d" &&
+            char != "i"
+          ) {
+            shortcuts.set(char, label[0]);
+            break;
+          }
+        }
+      }
+      const labelToShortcuts = new Map(
+        Array.from(shortcuts, (a) => a.reverse())
+      );
+      console.log(shortcuts);
+
+      if (g_labels.length > 0) {
+        d3.select("#labelPanel").selectAll("*").remove();
+      }
+
+      d3.select("#labelPanel")
+        .selectAll("a")
+        .data(g_labels)
+        .enter()
+        .append("a")
+        .attr("onclick", "labelDelegate(this)")
+        .attr("href", "javascript:void(0)")
+        .attr("title", function (d) {
+          return labelToShortcuts.get(d[0]);
+        })
+        .attr("class", "label_panel")
+        .attr("id", function (d) {
+          return `label_panel_${d[0].replace(" ", "_")}`;
+        })
+        .html(function (d) {
+          return d[0];
+        });
+
+      //
+      d3.selectAll("#labelPanel a").each(function (d) {
+        var t = document.createElement("span");
+        t.innerHTML =
+          "<a href='javascript:void(0)' onclick='setLabelParent(\"" +
+          d[0] +
+          "\")'>+</a> ";
+        this.parentNode.insertBefore(t, this.nextSibling);
+      });
+      //
+      console.log(g_labels);
+      let no_sys_labels = g_labels.filter(
+        (label_) => label_[0].indexOf("sys:") == -1
+      );
+      console.log(no_sys_labels);
+      //
+      d3.select("#label_predicted")
+        .selectAll("option")
+        .data(no_sys_labels)
+        .enter()
+        .append("option")
+        .attr("value", (d) => d[0].toLowerCase())
+        .html((d) => d[0]);
+      d3.select("#label_predicted")
+        .insert("option", ":first-child")
+        .html("--none--")
+        .attr("selected", "selected")
+        .attr("value", "null");
+      //
+      d3.select("#label_true")
+        .selectAll("option")
+        .data(g_labels)
+        .enter()
+        .append("option")
+        .attr("value", (d) => d[0].toLowerCase())
+        .html((d) => d[0]);
+      d3.select("#label_true")
+        .insert("option", ":first-child")
+        .html("--none--")
+        .attr("selected", "selected")
+        .attr("value", "null");
+      //
+      d3.select("#label_undetermined")
+        .selectAll("option")
+        .data(g_labels)
+        .enter()
+        .append("option")
+        .attr("value", (d) => d[0].toLowerCase())
+        .html((d) => d[0]);
+      d3.select("#label_undetermined")
+        .insert("option", ":first-child")
+        .html("--none--")
+        .attr("selected", "selected")
+        .attr("value", "null");
+      //
+      for (const option of options) {
+        const optionValFromUrl = urlParams.get(option);
+        if (optionValFromUrl) {
+          if (optionValFromUrl == "on") {
+            $("#" + option).attr("checked", true);
+          } else {
+            $("#" + option).val(optionValFromUrl);
+          }
+          urlOptions.set(option, optionValFromUrl);
+        }
+      }
+      //
+      shardFlux();
+      //
+      $("#gallery img").on("load", function () {
+        let height = $(this).height();
+        let width = $(this).width();
+        if (height / width > 1.0) {
+          $(this).height(1.0 * $(this).width());
+          $(this).width($(this).width() * (1.0 / (height / width)));
+        }
+      });
+      $("#fullImage").on("load", function () {
+        var rectsize = 100;
+        const svgContainer = $("#fullImageWrapper");
+        var svg = d3
+          .select("#fullImageWrapper")
+          .append("svg")
+          .attr("height", rectsize * 10)
+          .attr("width", rectsize * 10);
+
+        // var rectangle = svg
+        //   .append("rect")
+        //   .attr("x", 150)
+        //   .attr("y", 50)
+        //   .attr("width", 50)
+        //   .attr("height", 140);
+
+        $("#fullImage").attr("z-index", 100);
+      });
+    });
+
+    let typingTimer; // Timer identifier
+    let typedText = "";
+    const doneTypingInterval = 200; // Time in ms (200 ms)
+
+    $("#gallery").on("keydown", function () {
+      clearTimeout(typingTimer);
+    });
+
+    // User is "finished typing," do something
+    function doneTyping() {
+      logUI(typedText);
+      if (typedText.length == 1) {
+        const key = typedText[0];
+        if (shortcuts.has(key)) {
+         massLabelInGallery(shortcuts.get(key))
+        }
+        return;
+      }
+      let matchedLabels = new Array();
+      g_labels.forEach((val, _) => {
+        if (val[0].toLowerCase().indexOf(typedText.toLowerCase()) > -1) {
+          matchedLabels.push(val[0]);
+        }
+      });
+      addQuickLabel(gallerySelection[0], matchedLabels);
+      typedText = "";
+    }
+
+    function addQuickLabel(uid, possible_labels) {
+      const d3El = d3.select("div#labels-" + uid);
+      console.log(
+        "addQuickLabel",
+        uid,
+        possible_labels,
+        d3.select("div#labels-" + uid)
+      );
+      const numExisting = d3El.selectAll("a").length;
+      const labelData = zip(
+        new Array(numExisting).fill(""),
+        new Array(numExisting).fill(0)
+      ).concat(
+        zip(possible_labels, new Array(possible_labels.length).fill(0.0))
+      );
+      console.log(labelData);
+      d3El
+        .selectAll("a")
+        .data(labelData)
+        .enter()
+        .append("a")
+        .html(function (d) {
+          return `${d[0]}(${d[1]})`;
+        })
+        .attr("class", "quick_label")
+        .attr("onclick", function (d) {
+          return `labelInGallery('${uid}', '${d[0]}', false, event)`;
+        })
+
+        .attr("href", `javascript:void(0)`);
+    }
+
+    //
+    $("#gallery").on("keyup", function (eventData) {
+      const key = eventData.originalEvent.key;
+      // if (key == "d" & false) { // TODO: add shift
+      //   deselectGallery();
+      // } else if (key == "i" & false) { // TODO: add shift
+      //   toggleMapImageDisplay();
+      // } else if (shortcuts.has(key)) {
+      //   massLabelInGallery(shortcuts.get(key));
+      // }
+
+      typedText += String.fromCharCode(eventData.which);
+      $("#typingDiv").text(typedText);
+
+      // Clear the existing timer
+      clearTimeout(typingTimer);
+
+      // Set a new timer
+      typingTimer = setTimeout(doneTyping, doneTypingInterval);
+    });
+
+    $("#my_dataviz").on("keypress", function (eventData) {
+      const key = eventData.originalEvent.key;
+      if (key == "d") {
+        //deselectGallery();
+      } else if (key == "i") {
+        toggleMapImageDisplay();
+      }
+    });
+
+    //
+    $.fn.center = function () {
+      this.css("position", "fixed");
+      // this.css("top", $(window).height() / 2 - this.height() / 2 + "px");
+      this.css("top", 100 + "px");
+      // this.css("left", $(window).width() / 2 - this.width() / 2 + "px");
+      this.css("left", 100 + "px");
+      return this;
+    };
+    // $("#fullscreen").center();
+    $("#help").center();
+    //
+    $.post("/status", JSON.stringify({ idleTime: idleTime }))
+      .done(function (data) {
+        $("#status").attr("title", JSON.stringify(data, null, " "));
+        $("#status").html(data["status"]);
+        $("#progress").css(
+          "width",
+          Math.min(100, (1 - data["duration_perc"]) * 100) + "%"
+        );
+        trained_for_version = data["trained_for_version"];
+      })
+      .fail(function (e) {
+        alert("Failed to get status, is the backend running?");
+      });
+    // Increment the idle time counter every minute.
+    var idleInterval = setInterval(statusPoll, 1000);
+
+    // Zero the idle timer on mouse movement.
+    $(this).mousemove(function (e) {
+      activeTime += idleTime * 1;
+      localStorage.setItem("activeTime", activeTime);
+      idleTime = 0;
+    });
+    $(this).keypress(function (e) {
+      activeTime += idleTime * 1;
+      localStorage.setItem("activeTime", activeTime);
+      idleTime = 0;
+    });
+    flashElements();
+    //
+    // logUI(localStorage.getItem(`${elID}_display`));
+    $("#addLabelPanel").css(
+      "display",
+      localStorage.getItem(`addLabelPanel_display`)
+    );
+    $("#view_config").css(
+      "display",
+      localStorage.getItem(`view_config_display`)
+    );
+  });
+
+  function formatTimeWithSuperscript(seconds) {
+    let hrs = Math.floor(seconds / 3600);
+    let mins = Math.floor((seconds % 3600) / 60);
+    let secs = seconds % 60;
+
+    return (
+      `${String(hrs).padStart(2, "0")}ʰ : ` +
+      `${String(mins).padStart(2, "0")}ᵐ : ` +
+      `${String(secs).padStart(2, "0")}ˢ`
+    );
+  }
+
+  function statusPoll(forceIdleTime) {
+    if (urlParams.get("linear_auto_train") == "on") {
+      idleTime++;
+      logUI(`idleTime = ${idleTime}`);
+    }
+    const idleTimeForPost =
+      forceIdleTime !== undefined ? forceIdleTime : idleTime;
+    $.post("/status", JSON.stringify({ idleTime: idleTimeForPost * 1 })).done(
+      function (data) {
+        $("#status").attr("title", JSON.stringify(data, null, " "));
+        $("#status").html(data["status"]);
+        $("#progress").css(
+          "width",
+          Math.min(100, (1 - data["duration_perc"]) * 100) + "%"
+        );
+        // console.log(trained_for_version, data["trained_for_version"]);
+        if (
+          trained_for_version != data["trained_for_version"] &&
+          data["trained_for_version"] != null
+        ) {
+          location.reload();
+        }
+        trained_for_version = data["trained_for_version"];
+        // alert(data["package_version"]);
+        $("#package_version").html(data["package_version"]["version"]);
+        // speed
+        $("#speed_active_time").html(formatTimeWithSuperscript(activeTime));
+        $("#speed_annotation").html(
+          Math.round((data["num_labeled"] / (activeTime / 3600)) * 10) / 10
+        );
+        $("#speed_certain").html(
+          Math.round(data["num_unlabeled_certain"] / (activeTime / 3600), 1)
+        );
+      }
+    );
+  }
+
+  function changeOption(el) {
+    /*
+
+    RELOAD=YES
+    */
+    console.log(el.value, el.id);
+    urlOptions.set(
+      el.id,
+      el.value == "on" ? $("#" + el.id + ":checked").val() : el.value
+    );
+    if (["label_undetermined", "label_true"].indexOf(el.id) > -1) {
+      urlOptions.set("show_labeled", "labeled");
+    }
+    if (el.value.indexOf("sys:") > -1) {
+      urlOptions.set("ignore_double_checked", "on");
+    }
+    let url = "/annflux?";
+    //window.location.href = "/annflux?" +
+    for (const [key, value] of urlOptions) {
+      if (value && value != "null") {
+        url += `&${key}=${value}`;
+      }
+    }
+    window.location.href = url;
+  }
+
+  function clearLabelInGallery(el) {
+    const uid = $(el).attr("data-id");
+    $("#gallery-label-" + uid).attr("data", "");
+    d2 = d3.select("#gallery-" + uid).data()[0];
+    createQuickLabel(
+      d2.uid,
+      d2.labeled == 0 ? "quick_label_predicted" : "quick_label_true",
+      [],
+      true
+    );
+  }
+
+  function deselectGallery() {
+    if (gallerySelection.length > 0) {
+      for (const uid of gallerySelection) {
+        d3.select("div.gallery#gallery-" + uid).style("outline", "");
+      }
+      gallerySelection = [];
+    } else {
+      console.log(galleryImages);
+      galleryImages.each(function (d, i) {
+        d3.select("div.gallery#gallery-" + d.uid).style(
+          "outline",
+          "1px solid red"
+        );
+        gallerySelection.push(d.uid);
+      });
+    }
+    console.log("gallerySelection", gallerySelection);
+  }
+
+  function forceLinearTrain() {
+    $("#loading_circle").toggle();
+    statusPoll(150);
+  }
+
+  function highlightGalleryInMap() {
+    galleryImages.each((d, i) => {
+      console.log(d.uid);
+      let dot = d3.select("#dot-" + d.uid);
+
+      dot
+        .transition()
+        .duration(500)
+        .style("fill", "blue")
+        .transition()
+        .duration(500)
+        .style("fill", "red");
+      dot
+        .transition()
+        .duration(500)
+        .attr("r", 20)
+        .transition()
+        .duration(500)
+        .attr("r", 3);
+    });
+  }
+
+  function setFlash(elementId) {
+    console.log("setFlash", elementId);
+    localStorage.setItem("flashAtLoad", elementId.toString());
+  }
+
+  function flashElements() {
+    if (localStorage.getItem("flashAtLoad")) {
+      console.log("flashElements", localStorage.getItem("flashAtLoad"));
+      $(localStorage.getItem("flashAtLoad"))
+        .fadeOut(100)
+        .fadeIn(100)
+        .fadeOut(100)
+        .fadeIn(100);
+    }
+  }
+
+  function addLabel(parent) {
+    const newLabel = $("#newLabel").val();
+    setFlash(`#label_panel_${newLabel.replace(" ", "_")}`);
+    $.ajax({
+      url: "/label_defs",
+      type: "PUT",
+      success: function (response) {
+        location.reload();
+      },
+      data: JSON.stringify([newLabel, $("#parentLabel").val()]),
+    });
+  }
+
+  function setLabelParent(val) {
+    $("#parentLabel").val(val);
+  }
+</script>
+
+<script type="module">
+  myLayout.on("initialised", function () {
+    for (var container of [
+      mapContainer,
+      labelContainer,
+      galleryContainer,
+      fullImageContainer,
+      controlContainer,
+    ]) {
+      if (container) {
+        container.on("resize", saveState);
+      }
+    }
+
+    // set the dimensions and margins of the graph
+    var margin = { top: 0, right: 30, bottom: 30, left: 0 };
+    width = mapContainer.width;
+    height = mapContainer.height;
+    x = d3.scaleLinear().domain([-20, 20]).range([0, width]);
+    y = d3.scaleLinear().domain([-20, 20]).range([height, 0]);
+    time_x = d3.scaleLinear().domain([0, 900]).range([0, width]);
+    time_y = d3.scaleLinear().domain([-20, 20]).range([height, 0]);
+
+    console.log(width, height);
+    let prevTransform = Object();
+    prevTransform.k = 1;
+    prevTransform.x = 0;
+    prevTransform.y = 0;
+    let zooming = false;
+    let transform = null;
+    const color_by = urlParams.get("color_map");
+
+    // append the svg object to the body of the page
+    svg = d3
+      .select("#my_dataviz")
+      .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom);
+    g = svg
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    gallery = d3.select("#gallery").append("div");
+
+    d3.csv("/data", function (data_p) {
+      data = data_p;
+      console.log("|data|", data.length);
+      var x = d3.scaleLinear().domain([-20, 20]).range([0, width]);
+      var y = d3.scaleLinear().domain([-20, 20]).range([height, 0]);
+
+      addDots(data, x, y, color_by, transform, width, height);
+      //addTimeline(data, transform, width, height);
+
+      //addImages(data, x, y);
+
+      zoom = d3
+        .zoom()
+        .filter(function filter(event) {
+          return !d3.event.ctrlKey && !d3.event.button;
+        })
+        .on("zoom", handleZoom)
+        .on("end", function () {
+          zoomControl(true);
+        });
+
+      function handleZoom(e) {
+        transform = d3.zoomTransform(this);
+        // console.log("handleZoom", transform);
+        // console.log(this);
+        g.attr("transform", transform);
+        zoomControl(false);
+      }
+
+      function zoomControl(updatePrev) {
+        // console.log("zoomControl");
+        if (!transform) {
+          return null;
+        }
+        // alert("here");
+
+        const now = new Date().getTime() / 1000;
+        if (now - lastZoomUpdate > 0.1) {
+          // if (translation > 3.0 || transform.k != prevTransform.k) {
+          if (numUpdatesActive == 0) {
+            numUpdatesActive++;
+            setTimeout(function () {
+              d3.select("#dots").remove();
+              addDots(data, x, y, color_by, transform, width, height);
+              clearImages();
+              addImages(data, x, y, transform, width, height);
+              lastZoomUpdate = now;
+              numUpdatesActive--;
+              console.log(
+                "update took",
+                new Date().getTime() / 1000 - now,
+                numUpdatesActive
+              );
+            }, 0);
+          }
+        } else {
+          console.log("too fast");
+        }
+
+        if (updatePrev) {
+          prevTransform = transform;
+        }
+      }
+
+      function initZoom() {
+        d3.select("svg").call(zoom);
+      }
+
+      initZoom();
+
+      let coords = [];
+      const lineGenerator = d3.line();
+
+      const pointInPolygon = function (point, vs) {
+        // console.log(point, vs);
+        // ray-casting algorithm based on
+        // https://wrf.ecse.rpi.edu/Research/Short_Notes/pnpoly.html/pnpoly.html
+
+        var x = point[0],
+          y = point[1];
+
+        var inside = false;
+        for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+          var xi = vs[i][0],
+            yi = vs[i][1];
+          var xj = vs[j][0],
+            yj = vs[j][1];
+
+          var intersect =
+            yi > y != yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+          if (intersect) inside = !inside;
+        }
+
+        return inside;
+      };
+
+      function drawPath() {
+        d3.select("#lasso")
+          .style("stroke", "white")
+          .style("stroke-width", 2)
+          .style("fill", "#00000054")
+          .attr("d", lineGenerator(coords));
+      }
+
+      function dragStart() {
+        console.log("dragStart");
+        coords = [];
+        dots.attr("fill", "steelblue");
+        d3.select("#lasso").remove();
+        d3.select("#my_dataviz g").append("path").attr("id", "lasso");
+      }
+
+      function dragMove(event) {
+        let mouseX = d3.event.x;
+        let mouseY = d3.event.y;
+        let k = 1;
+        let Tx = 1;
+        let Ty = 1;
+        if (transform !== undefined && transform) {
+          k = transform.k;
+          Tx = transform.x;
+          Ty = transform.y;
+        }
+        mouseX = (mouseX - Tx) / k;
+        mouseY = (mouseY - Ty) / k;
+        coords.push([mouseX, mouseY]);
+        drawPath();
+      }
+
+      function dragEnd() {
+        let selectedDots = [];
+        dots.each((d, i) => {
+          let point = [x(d.e_0), y(d.e_1)];
+          if (pointInPolygon(point, coords)) {
+            d3.select("#dot-" + d.uid).attr("fill", "red");
+            selectedDots.push(d.uid);
+          }
+        });
+        // console.log(`select: ${selectedDots}`);
+        //
+        let show_data = [];
+        for (const d of data) {
+          if (selectedDots.includes(d.uid)) {
+            show_data.push(d);
+          }
+        }
+        drawGallery(show_data);
+      }
+      // auto suggestion
+      let as_ranking_column = urlParams.get("as_ranking_column");
+      console.log("as_ranking_column", as_ranking_column);
+      if (as_ranking_column == null) {
+        as_ranking_column = "most_needed";
+      }
+      let show_labeled = urlParams.get("show_labeled");
+      if (show_labeled == null) {
+        show_labeled = "unlabeled";
+      }
+      let show_data2 = [];
+      let show_data_test = [];
+      if (as_ranking_column == "score_true") {
+        show_labeled = "labeled";
+      }
+      let [show_data_start, tmp_] = filterData(
+        data,
+        data.length,
+        transform,
+        width,
+        height
+      );
+      let num_in_gallery = urlParams.get("num_in_gallery");
+      if (num_in_gallery == null) {
+        num_in_gallery = 10;
+      }
+      // console.log("foekoezoe", show_data_start);
+      if (
+        as_ranking_column == "score_predicted" ||
+        as_ranking_column == "score_true" ||
+        as_ranking_column == "fre" ||
+        as_ranking_column == "most_needed" ||
+        as_ranking_column == "incorrect_score" ||
+        as_ranking_column == "certain_incorrect"
+      ) {
+        show_data2 = show_data_start.filter(
+          (row) => row.labeled == (show_labeled == "unlabeled" ? 0 : 1) //&& row.in_test == 1
+        );
+        if (show_labeled == "labeled") {
+          console.log(
+            "ignore_double_checked",
+            urlParams.get("ignore_double_checked")
+          );
+          show_data2 = show_data2.filter(
+            (row) =>
+              row.double_checked == 0 ||
+              row.label_undetermined.length > 0 ||
+              urlParams.get("ignore_double_checked") == "on"
+          );
+        }
+        const rank_modifier = urlParams.get("invert_ranking") == "on" ? -1 : +1;
+        show_data2 = show_data2.sort(
+          (a, b) =>
+            rank_modifier * (a[as_ranking_column] - b[as_ranking_column])
+        );
+        show_data2 = show_data2.slice(
+          0,
+          show_labeled == "unlabeled" ? num_in_gallery - 1 : num_in_gallery
+        );
+        console.log("show_data2", show_data2);
+      } else if (as_ranking_column == "high_label_entropy") {
+        for (const row of data) {
+          if (row.al_measure == 0 && row.in_test == 0) {
+            show_data2.push(row);
+          }
+        }
+      }
+      if (show_labeled == "unlabeled") {
+        for (const row of data) {
+          if (row.in_test == 1 && row.labeled == 0) {
+            show_data_test.push(row);
+          }
+        }
+        console.log(show_data2.length, "show_data2");
+        console.log(
+          show_data_test.length,
+          "show_data_test",
+          Math.ceil(0.1 * show_data2.length)
+        );
+        show_data_test = _.sample(
+          show_data_test,
+          Math.ceil(0.1 * show_data2.length)
+        );
+        console.log(show_data_test.length, "show_data_test");
+        if (as_ranking_column != "score_true") {
+          for (const row of show_data_test) {
+            console.log("test", row.uid);
+            show_data2.push(row);
+          }
+        }
+      }
+      for (const row of show_data2) {
+        d3.select("#dot-" + row.uid)
+          .style("stroke", "#ff0000")
+          .style("stroke-width", 2);
+      }
+      // TODO: skip the above logic when labeled is in local storage
+      console.log("oegma", localStorage.getItem("labeled"));
+      if (localStorage.getItem("labeled")) {
+        const labelsFromStorage = JSON.parse(localStorage.getItem("labeled"));
+        const uidsFromStorage = Object.keys(labelsFromStorage);
+        let numRestored = 0;
+        show_data2 = new Array();
+        for (const row of data) {
+          if (uidsFromStorage.indexOf(row.uid) > -1) {
+            numRestored++;
+            show_data2.push(row);
+          }
+        }
+        logUI(`Restored ${numRestored} labeled UIDs from local storage`, 1);
+      }
+      //
+      drawGallery(show_data2);
+      console.log(show_data2.length, "show_data2");
+      //
+
+      const drag = d3
+        .drag()
+        .filter(function filter(event) {
+          return d3.event.ctrlKey && !d3.event.button;
+        })
+        .on("start", dragStart)
+        .on("drag", dragMove)
+        .on("end", dragEnd);
+
+      d3.select("#my_dataviz").call(drag);
+
+      $("body").on("keypress", function (eventData) {
+        const key = eventData.originalEvent.key;
+        if (key == "?") {
+          // alert("gg");
+          $("#help").toggle();
+        }
+      });
+    });
+  });
+</script>
