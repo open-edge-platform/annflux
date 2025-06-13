@@ -3,7 +3,7 @@ name = "annflux"
 authors = [
     { name = "Laurens Hogeweg", email = "laurens.hogeweg@intel.com" },
 ]
-version = "0.9.2.0"
+version = "1.0.0.0"
 description = "Coming soon"
 requires-python = ">=3.11"
 dynamic = ["dependencies"]
