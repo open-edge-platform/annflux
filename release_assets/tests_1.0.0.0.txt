@@ -23,20 +23,11 @@ Sample caption shape  (50,)
 trainable params: 983040 || all params: 24429057 || trainable%: 4.02
 len(data_train) 405
 Training complete in 0m 17s
-perf 0.98
-0.98
-/tmp/tmpor8gsqke
-successfully committed 48167ab3b6a27c632e2ee92987a6bcbfdea42717e543bccdabc1ae02
-successfully committed d6ddf7707c380fe4f2b7f5019cec0ea037016c7b624ae163b5b9a757
-Skipping _test_ui because not in interactive mode
-Testing export command
-Usage 
-    source activate annflux_whl
-    cd /tmp/tmpg8wr9kzo/package
-    python clip_server.py .
-    # in another shell tab
-    curl -X POST -F "image=@GBIF_2833878594_0.jpg" http://127.0.0.1:8008/v1/predict | jq .
-    
+perf 0.94
+0.94
+/tmp/tmpguirud5a
+successfully committed 20933b402d3bbc543fc776e6394c471c974cab575f6b479edf16e8f3
+successfully committed 67e994306ea2cd11266dc9a6b243b1ec1b83fa89e366bebaea3d545b
 END
 PASSED
 annflux/tests/test_train.py::TestTrain::test_train /home/lhogeweg/Documents/data/bombus-plant-test
@@ -73,7 +64,7 @@ _______________ coverage: platform linux, python 3.11.11-final-0 _______________
 
 Name                                                Stmts   Miss  Cover
 -----------------------------------------------------------------------
-/tmp/tmphav4iyxd/_remote_module_non_scriptable.py      39     27    31%
+/tmp/tmpem4x93_f/_remote_module_non_scriptable.py      39     27    31%
 __init__.py                                             0      0   100%
 annflux/__init__.py                                     0      0   100%
 annflux/algorithms/__init__.py                          0      0   100%
@@ -86,12 +77,12 @@ annflux/performance/basic.py                           61     47    23%
 annflux/repo_results_to_embedding.py                   64     11    83%
 annflux/repository/__init__.py                          0      0   100%
 annflux/repository/dataset.py                          65     17    74%
-annflux/repository/model.py                            99     47    53%
+annflux/repository/model.py                            99     50    49%
 annflux/repository/repository.py                      161     50    69%
 annflux/repository/resultset.py                        92     36    61%
 annflux/scripts/__init__.py                             0      0   100%
-annflux/scripts/annflux_cli.py                         76      5    93%
-annflux/scripts/run_tests.py                           71     22    69%
+annflux/scripts/annflux_cli.py                         60      5    92%
+annflux/scripts/run_tests.py                           59     20    66%
 annflux/shared.py                                      45      1    98%
 annflux/tests/__init__.py                               0      0   100%
 annflux/tests/test_cli.py                               5      0   100%
@@ -108,5 +99,5 @@ annflux/training/annflux/clip.py                      242     24    90%
 annflux/training/annflux/clip_shared.py                69      4    94%
 annflux/training/annflux/feature_extractor.py          41      7    83%
 -----------------------------------------------------------------------
-TOTAL                                                1687    520    69%
-================== 2 passed, 4 warnings in 130.37s (0:02:10) ===================
+TOTAL                                                1659    521    69%
+================== 2 passed, 4 warnings in 129.83s (0:02:09) ===================

@@ -12,12 +12,12 @@ annflux/performance/basic.py                       61     47    23%   38-103, 10
 annflux/repo_results_to_embedding.py               64     11    83%   37-38, 46-48, 58-64, 73, 75, 95-96
 annflux/repository/__init__.py                      0      0   100%
 annflux/repository/dataset.py                      65     17    74%   27-31, 41, 43, 62, 76, 100, 104, 113, 117-118, 123, 126-128
-annflux/repository/model.py                        99     47    53%   46, 50, 54, 58, 62, 79, 107-161, 169, 172, 179-182, 185
+annflux/repository/model.py                        99     50    49%   46, 50, 54, 58, 62, 79, 89-91, 107-161, 169, 172, 179-182, 185
 annflux/repository/repository.py                  161     50    69%   37-44, 47-57, 60-64, 94, 98, 105, 151-172, 200-201, 207, 213-217, 226, 233, 287, 294, 298, 302, 317, 324
 annflux/repository/resultset.py                    92     36    61%   28-29, 91-97, 99, 108, 112, 116-117, 121, 135-151, 160-179, 182
 annflux/scripts/__init__.py                         0      0   100%
-annflux/scripts/annflux_cli.py                     76      5    93%   152-157, 166, 185, 198
-annflux/scripts/run_tests.py                       71     22    69%   31, 39, 48, 59, 74, 80-82, 89-91, 94-98, 104-106, 111-112, 116
+annflux/scripts/annflux_cli.py                     60      5    92%   123-128, 137, 153, 166
+annflux/scripts/run_tests.py                       59     20    66%   31, 39, 48, 54-62, 74, 80-82, 89-91, 96-97, 101
 annflux/shared.py                                  45      1    98%   71
 annflux/tests/__init__.py                           0      0   100%
 annflux/tests/test_cli.py                           5      0   100%
@@ -34,4 +34,4 @@ annflux/training/annflux/clip.py                  242     24    90%   153, 250-2
 annflux/training/annflux/clip_shared.py            69      4    94%   105, 110-112
 annflux/training/annflux/feature_extractor.py      41      7    83%   48-50, 62, 67, 77, 82
 -----------------------------------------------------------------------------
-TOTAL                                            1648    493    70%
+TOTAL                                            1620    494    70%
