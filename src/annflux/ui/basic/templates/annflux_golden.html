@@ -767,9 +767,9 @@ limitations under the License.
         for (const char of label[0].toLocaleLowerCase()) {
           if (
             !shortcuts.has(char) &&
-            char != " " &&
-            char != "d" &&
-            char != "i"
+            char != " " 
+            // && char != "d" 
+            // && char != "i"
           ) {
             shortcuts.set(char, label[0]);
             break;
@@ -910,11 +910,12 @@ limitations under the License.
 
     // User is "finished typing," do something
     function doneTyping() {
-      logUI(typedText);
+      logUI(typedText.lengt);
       if (typedText.length == 1) {
-        const key = typedText[0];
+        const key = typedText.toLowerCase()[0];
         if (shortcuts.has(key)) {
-         massLabelInGallery(shortcuts.get(key))
+          massLabelInGallery(shortcuts.get(key));
+          typedText = "";
         }
         return;
       }
@@ -1029,9 +1030,7 @@ limitations under the License.
       localStorage.setItem("activeTime", activeTime);
       idleTime = 0;
     });
-    flashElements();
-    //
-    // logUI(localStorage.getItem(`${elID}_display`));
+
     $("#addLabelPanel").css(
       "display",
       localStorage.getItem(`addLabelPanel_display`)
@@ -1055,10 +1054,10 @@ limitations under the License.
   }
 
   function statusPoll(forceIdleTime) {
-    if (urlParams.get("linear_auto_train") == "on") {
-      idleTime++;
-      logUI(`idleTime = ${idleTime}`);
-    }
+    // if (urlParams.get("linear_auto_train") == "on") {
+    idleTime++;
+    // logUI(`idleTime = ${idleTime}`);
+    // }
     const idleTimeForPost =
       forceIdleTime !== undefined ? forceIdleTime : idleTime;
     $.post("/status", JSON.stringify({ idleTime: idleTimeForPost * 1 })).done(
@@ -1080,6 +1079,7 @@ limitations under the License.
         // alert(data["package_version"]);
         $("#package_version").html(data["package_version"]["version"]);
         // speed
+        // console.log("activeTime", activeTime)
         $("#speed_active_time").html(formatTimeWithSuperscript(activeTime));
         $("#speed_annotation").html(
           Math.round((data["num_labeled"] / (activeTime / 3600)) * 10) / 10

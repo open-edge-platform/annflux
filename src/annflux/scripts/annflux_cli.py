@@ -166,11 +166,10 @@ def execute(arg_list: list[str] | None = None):
     elif args.command == "embed":
         embed_and_prepare(AnnfluxSource(folder))
     elif args.command == "go":
-        exclusivity = args.exclusivity
         go_command(
             folder,
             args.start_labels,
-            exclusivity,
+            args.exclusivity,
             args.architecture,
             args.label_column_name,
         )

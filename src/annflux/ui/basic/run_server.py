@@ -445,7 +445,7 @@ def estimate_duration(annflux_state: AnnFluxState, step_state: Tuple[str, int, i
 @app.route("/status", methods=["POST"])
 def status():
     label_update = request.get_json(force=True)
-    auto_linear_train_idle_time = int(os.getenv("AUTO_LINEAR_TRAIN_IDLE_TIME", 120))
+    auto_linear_train_idle_time = int(os.getenv("AUTO_LINEAR_TRAIN_IDLE_TIME", 1800))
     if label_update["idleTime"] > auto_linear_train_idle_time:
         if g_state.train_thread is None or not g_state.train_thread.is_alive():
             if g_state.labeled_indices is not None:
