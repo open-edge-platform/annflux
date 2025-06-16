@@ -1,0 +1,103 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.11, pytest-8.3.5, pluggy-1.5.0 -- /home/lhogeweg/miniconda3/envs/annflux2/bin/python
+cachedir: .pytest_cache
+rootdir: /home/lhogeweg/Documents/annflux_oe
+configfile: pyproject.toml
+plugins: cov-6.1.1
+collecting ... collected 2 items
+
+annflux/tests/test_cli.py::TestCli::test_cli START
+/home/lhogeweg/Documents/data/bombus-plant-test
+Testing go command
+command_="go /home/lhogeweg/annflux/data/envdataset --start_labels ['A', 'B', 'C']"
+successfully committed afe7a9ce82f5e2835df0dd66c47ec7e10e25bc294859d3592a9755cd
+Initialized AnnFlux in folder /home/lhogeweg/annflux/data/envdataset/annflux
+successfully committed 2c1493db681321643937047c65b5df403141e91fb56ca859085ff510
+Testing train_then_features command
+Train set size: 405
+Val set size: 50
+Sample input_ids shape  torch.Size([50, 5])
+Sample attention_mask shape  torch.Size([50, 5])
+Sample pixel_values shape  torch.Size([50, 3, 224, 224])
+Sample caption shape  (50,)
+trainable params: 983040 || all params: 24429057 || trainable%: 4.02
+len(data_train) 405
+Training complete in 0m 17s
+perf 0.94
+0.94
+/tmp/tmpguirud5a
+successfully committed 20933b402d3bbc543fc776e6394c471c974cab575f6b479edf16e8f3
+successfully committed 67e994306ea2cd11266dc9a6b243b1ec1b83fa89e366bebaea3d545b
+END
+PASSED
+annflux/tests/test_train.py::TestTrain::test_train /home/lhogeweg/Documents/data/bombus-plant-test
+successfully committed afe7a9ce82f5e2835df0dd66c47ec7e10e25bc294859d3592a9755cd
+Train set size: 405
+Val set size: 50
+Sample input_ids shape  torch.Size([50, 5])
+Sample attention_mask shape  torch.Size([50, 5])
+Sample pixel_values shape  torch.Size([50, 3, 224, 224])
+Sample caption shape  (50,)
+trainable params: 983040 || all params: 24429057 || trainable%: 4.02
+len(data_train) 405
+Training complete in 0m 50s
+perf 0.96
+0.96
+PASSED
+
+=============================== warnings summary ===============================
+<frozen importlib.util>:262
+  <frozen importlib.util>:262: DeprecationWarning: The `openvino.runtime` module is deprecated and will be removed in the 2026.0 release. Please replace `openvino.runtime` with `openvino`.
+
+src/annflux/tests/test_cli.py::TestCli::test_cli
+src/annflux/tests/test_cli.py::TestCli::test_cli
+  /home/lhogeweg/miniconda3/envs/annflux2/lib/python3.11/site-packages/transformers/models/clip/modeling_clip.py:243: TracerWarning: Converting a tensor to a Python boolean might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
+    if not interpolate_pos_encoding and (height != self.image_size or width != self.image_size):
+
+src/annflux/tests/test_cli.py::TestCli::test_cli
+  /home/lhogeweg/miniconda3/envs/annflux2/lib/python3.11/site-packages/sklearn/utils/deprecation.py:151: FutureWarning: 'force_all_finite' was renamed to 'ensure_all_finite' in 1.6 and will be removed in 1.8.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.11.11-final-0 _______________
+
+Name                                                Stmts   Miss  Cover
+-----------------------------------------------------------------------
+/tmp/tmpem4x93_f/_remote_module_non_scriptable.py      39     27    31%
+__init__.py                                             0      0   100%
+annflux/__init__.py                                     0      0   100%
+annflux/algorithms/__init__.py                          0      0   100%
+annflux/algorithms/embeddings.py                       20      3    85%
+annflux/data/__init__.py                                0      0   100%
+annflux/data/envdataset/__init__.py                     0      0   100%
+annflux/data/envdataset/data.py                        39      9    77%
+annflux/performance/__init__.py                         0      0   100%
+annflux/performance/basic.py                           61     47    23%
+annflux/repo_results_to_embedding.py                   64     11    83%
+annflux/repository/__init__.py                          0      0   100%
+annflux/repository/dataset.py                          65     17    74%
+annflux/repository/model.py                            99     50    49%
+annflux/repository/repository.py                      161     50    69%
+annflux/repository/resultset.py                        92     36    61%
+annflux/scripts/__init__.py                             0      0   100%
+annflux/scripts/annflux_cli.py                         60      5    92%
+annflux/scripts/run_tests.py                           59     20    66%
+annflux/shared.py                                      45      1    98%
+annflux/tests/__init__.py                               0      0   100%
+annflux/tests/test_cli.py                               5      0   100%
+annflux/tests/test_train.py                            28      0   100%
+annflux/tools/__init__.py                               0      0   100%
+annflux/tools/core.py                                  56     16    71%
+annflux/tools/data.py                                  98     46    53%
+annflux/tools/io.py                                    64     27    58%
+annflux/tools/mixed.py                                 43     31    28%
+annflux/train_indeed_image.py                         209     90    57%
+annflux/training/__init__.py                            0      0   100%
+annflux/training/annflux/__init__.py                    0      0   100%
+annflux/training/annflux/clip.py                      242     24    90%
+annflux/training/annflux/clip_shared.py                69      4    94%
+annflux/training/annflux/feature_extractor.py          41      7    83%
+-----------------------------------------------------------------------
+TOTAL                                                1659    521    69%
+================== 2 passed, 4 warnings in 129.83s (0:02:09) ===================

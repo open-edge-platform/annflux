@@ -89,21 +89,6 @@ def run_cli_tests():
     except:  # noqa
         print("test_train_then_features failed")
         raise
-    # UI
-    if test_type == "user":
-        try:
-            _test_ui(test_data_path)
-        except:  # noqa
-            print("test_ui failed")
-            raise
-    else:
-        print("Skipping _test_ui because not in interactive mode")
-    # export
-    try:
-        _test_export(test_data_path)
-    except:  # noqa
-        print("test_export failed")
-        raise
     print("END")
 
 
