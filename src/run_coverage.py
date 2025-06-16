@@ -1,6 +1,8 @@
 import os
 import re
 
+from annflux.tools.mixed import get_version
+
 
 def extract_test_results(input_path: str, out_path:str):
     passed_match = re.search(
@@ -45,10 +47,6 @@ def extract_test_results(input_path: str, out_path:str):
         file.write(f"| Time | {result['time']} |\n")
         file.write(f"| Tests successful (Failed==0 and Time < 5:00) | {'✅' if result['passed_condition'] else '❌'} |\n")
     return result
-
-
-def get_version():
-    return {"version": "1.0.0.0"}
 
 
 def run_coverage_func():

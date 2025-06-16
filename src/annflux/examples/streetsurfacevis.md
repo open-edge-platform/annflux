@@ -1,10 +1,16 @@
+Use the public (Creative Commons Attribution Share Alike 4.0 International) road type dataset 'StreetSurfaceVis' (https://zenodo.org/records/11449977 / https://www.nature.com/articles/s41597-024-04295-9).
 
+The dataset contains 9122 images of various road types.
+
+Download the data
 ```bash
 # see https://zenodo.org/records/11449977
 mkdir ~/annflux/data/streetSurfaceVis
 cd ~/annflux/data/streetSurfaceVis
 curl https://zenodo.org/records/11449977/files/s_256.zip?download=1 > streetSurfaceVis.zip
 unzip -j streetSurfaceVis.zip -d "images"
+# the original zip unfortunatey contains 2 0-bytes files
+find ~/annflux/data/streetSurfaceVis/images -size 0 -delete
 ```
 
 ```bash
@@ -12,6 +18,7 @@ python ../scripts/annflux_cli.py go ~/annflux/data/streetSurfaceVis --start_labe
 ```
 
 ```bash
+export PYTHONPATH="..:$PYTHONPATH"
 export APP_DEBUG=1; python ../ui/basic/run_server.py ~/annflux/data/streetSurfaceVis 
 ```
 
@@ -27,7 +34,7 @@ import pandas
 import json
 os.chdir(os.path.expanduser("~/annflux/data/streetSurfaceVis"))
 t = pandas.read_csv("streetSurfaceVis_v1_0.csv", dtype={"mapillary_image_id": str})
-annflux_folder = "~/annflux/data/streetSurfaceVis/annflux"
+annflux_folder = os.path.expanduser("~/annflux/data/streetSurfaceVis/annflux")
 annotations_path = os.path.join(annflux_folder, "labels.json")
 if os.path.exists(annotations_path):
     with open(annotations_path) as f:

@@ -1,0 +1,33 @@
+annflux/scripts/run_tests.py:20:42: F401 [*] `annflux.data.envdataset.data.EnvDataset` imported but unused
+   |
+18 | from tempfile import mkdtemp
+19 |
+20 | from annflux.data.envdataset.data import EnvDataset
+   |                                          ^^^^^^^^^^ F401
+21 | # see: https://pythontest.com/testing-argparse-apps/ for inspiration
+22 | from annflux.data.bombus_plant_test.data import BombusPlantTest
+   |
+   = help: Remove unused import: `annflux.data.envdataset.data.EnvDataset`
+
+annflux/tools/core.py:17:20: F401 [*] `typing.Optional` imported but unused
+   |
+15 | import time
+16 | from pathlib import Path
+17 | from typing import Optional
+   |                    ^^^^^^^^ F401
+18 |
+19 | import numpy as np
+   |
+   = help: Remove unused import: `typing.Optional`
+
+annflux/tools/mixed.py:21:8: F401 [*] `annflux` imported but unused
+   |
+19 | from typing import Optional, List
+20 |
+21 | import annflux
+   |        ^^^^^^^ F401
+   |
+   = help: Remove unused import: `annflux`
+
+Found 3 errors.
+[*] 3 fixable with the `--fix` option.

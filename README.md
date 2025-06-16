@@ -80,6 +80,10 @@ HIGH
 
 # Changelog
 
+## 1.0.1.0
+
+- Basic UI contribution from Naturalis
+
 ## 1.0.0.0
 
 - Final first release
