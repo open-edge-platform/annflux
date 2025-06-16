@@ -24,7 +24,31 @@ def extract_test_results(input_path: str, out_path:str):
     else:
         raise RuntimeError("Unknown test output format")
 
-from annflux.ui.basic.run_server import get_version
+    # split time into hours, minutes, and seconds
+    hours, minutes, seconds = map(int, time_taken.split(':'))
+
+    passed_condition = hours == 0 and minutes < 5 and failed == 0
+
+    result = {
+        "passed": passed,
+        "failed": failed,
+        "warnings": warnings,
+        "time": time_taken,
+        "passed_condition": passed_condition
+    }
+    with open(out_path, 'w') as file:
+        file.write("| Metric | Value |\n")
+        file.write("|--------|-------|\n")
+        file.write(f"| Passed | {result['passed']} |\n")
+        file.write(f"| Failed | {result['failed']} |\n")
+        file.write(f"| Warnings | {result['warnings']} |\n")
+        file.write(f"| Time | {result['time']} |\n")
+        file.write(f"| Tests successful (Failed==0 and Time < 5:00) | {'✅' if result['passed_condition'] else '❌'} |\n")
+    return result
+
+
+def get_version():
+    return {"version": "1.0.0.0"}
 
 
 def run_coverage_func():

@@ -3,5 +3,5 @@
 | Passed | 2 |
 | Failed | 0 |
 | Warnings | 4 |
-| Time | 0:02:11 |
+| Time | 0:02:09 |
 | Tests successful (Failed==0 and Time < 5:00) | ✅ |

@@ -80,6 +80,14 @@ HIGH
 
 # Changelog
 
+## 1.0.0.0
+
+- Final first release
+
+## 0.9.3.0
+
+- Improved test reporting
+
 ## 0.9.3.0
 
 - Improved test reporting

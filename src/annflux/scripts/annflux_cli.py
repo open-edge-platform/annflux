@@ -15,43 +15,14 @@
 from __future__ import annotations
 
 import argparse
-import glob
 import os
-import shutil
 
 from annflux.repo_results_to_embedding import embed_and_prepare
-from annflux.repository.model import ClipModel
 from annflux.shared import AnnfluxSource
 from annflux.train_indeed_image import init_folder, train_then_features
 from annflux.training.annflux.feature_extractor import TrainParameters
-import annflux
 
 
-def export_model_package(source: AnnfluxSource, out_folder):
-    repo = source.repository
-    model: ClipModel = repo.get(label=ClipModel).last()  # TODO: generalize
-    model.export_model_package(out_folder)
-    shutil.copy(
-        os.path.join(annflux.__path__[0], "training/annflux/clip_server.py"),
-        out_folder,
-    )
-    shutil.copy(
-        os.path.join(annflux.__path__[0], "training/annflux/clip_shared.py"),
-        out_folder,
-    )
-
-    first_image_path = glob.glob(source.images_path + "/*.jpg")[0]
-    shutil.copy(first_image_path, out_folder)
-    # with open(os.path.join(out_folder, "__init__.py"), "w") as f:
-    #     f.write("")
-
-    print(f"""Usage 
-    source activate annflux_whl
-    cd {out_folder}
-    python clip_server.py .
-    # in another shell tab
-    curl -X POST -F "image=@{os.path.basename(first_image_path)}" http://127.0.0.1:8008/v1/predict | jq .
-    """)
 
 
 def execute(arg_list: list[str] | None = None):
@@ -173,9 +144,6 @@ def execute(arg_list: list[str] | None = None):
             args.architecture,
             args.label_column_name,
         )
-    elif args.command == "export":
-        source = AnnfluxSource(folder)
-        export_model_package(source, args.out_folder)
 
 
 def go_command(
