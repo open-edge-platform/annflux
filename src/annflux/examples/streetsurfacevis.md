@@ -9,19 +9,22 @@ mkdir ~/annflux/data/streetSurfaceVis
 cd ~/annflux/data/streetSurfaceVis
 curl https://zenodo.org/records/11449977/files/s_256.zip?download=1 > streetSurfaceVis.zip
 unzip -j streetSurfaceVis.zip -d "images"
-# the original zip unfortunatey contains 2 0-bytes files
+# the original zip unfortunately contains two 0-bytes files
 find ~/annflux/data/streetSurfaceVis/images -size 0 -delete
 ```
-
+ANNFLUX GO: initialize the project, compute features and embed them
 ```bash
-python ../scripts/annflux_cli.py go ~/annflux/data/streetSurfaceVis --start_labels Asphalt Concrete Paving_stones Sett Unpaved --exclusivity Asphalt,Concrete,Paving_stones,Sett,Unpaved 
-```
-
-```bash
+cd ..
 export PYTHONPATH="..:$PYTHONPATH"
-export APP_DEBUG=1; python ../ui/basic/run_server.py ~/annflux/data/streetSurfaceVis 
+python scripts/annflux_cli.py go ~/annflux/data/streetSurfaceVis --start_labels Asphalt Concrete Paving_stones Sett Unpaved --exclusivity Asphalt,Concrete,Paving_stones,Sett,Unpaved 
 ```
-
+Run UI
+```bash
+cd ..
+export PYTHONPATH="..:$PYTHONPATH"
+export APP_DEBUG=1; python ui/basic/run_server.py ~/annflux/data/streetSurfaceVis 
+```
+## Optional: set the true labels
 ```bash
 cd ~/annflux/data/streetSurfaceVis
 curl https://zenodo.org/records/11449977/files/streetSurfaceVis_v1_0.csv?download=1 > streetSurfaceVis_v1_0.csv
@@ -55,6 +58,9 @@ with open(os.path.join(annflux_folder, "labels.json"), "w") as f:
     json.dump(annotations, f, indent=2)
 ```
 
+## Train
 ```bash
 python ../scripts/annflux_cli.py train_then_features ~/annflux/data/streetSurfaceVis 
 ```
+
+## Export

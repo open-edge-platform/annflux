@@ -364,7 +364,12 @@ time_estimators = []
 states = []
 
 
-def estimate_duration(annflux_state: AnnFluxState, step_state: Tuple[str, int, int]):
+def estimate_duration(annflux_state: AnnFluxState, step_state: Tuple[str, int, int]) -> (int, int):
+    """
+    Estimate duration of state transitions to provide progressbar functionality
+
+    :return (estimated duration in seconds, standard deviation of estimated duration in seconds)
+    """
     global time_estimators, states
     if len(time_estimators) == 0:
         timings = pandas.read_csv(annflux_state.timings_path)
@@ -379,7 +384,6 @@ def estimate_duration(annflux_state: AnnFluxState, step_state: Tuple[str, int, i
                 and row.status != "idle"
                 and timings.loc[r - 1, "status"] != "idle"
             ):
-                # state = f"{timings.loc[r - 1, 'status']}-{row.status}"
                 state = timings.loc[r - 1, "status"]
                 if state not in states:
                     states.append(state)
@@ -396,12 +400,12 @@ def estimate_duration(annflux_state: AnnFluxState, step_state: Tuple[str, int, i
         logger.debug(f"estimate_duration: transitions={transitions[:-10]}")
         x = np.vstack(transitions)
 
-        # time_estimators = []
         for _ in range(10):
             rf = RandomForestRegressor()
             rf.fit(x, np.array(durations))
             time_estimators.append(rf)
 
+    print(f"{step_state[0]=}")
     if step_state[0] in states:
         in_features = (
             np.array(
@@ -419,7 +423,8 @@ def estimate_duration(annflux_state: AnnFluxState, step_state: Tuple[str, int, i
             results.append(rf_.predict(in_features)[0])
         result = np.mean(results), np.std(results)
     else:
-        result = 0, 0
+        # if no information about the state transition, assume 30 seconds
+        result = 30, 0 if step_state[0] != "idle" else 0,0
     return result
 
 
