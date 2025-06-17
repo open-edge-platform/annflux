@@ -1,4 +1,5 @@
 # Copyright 2025 Intel Corporation
+# Copyright 2025 Naturalis Biodiversity Center
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -136,11 +137,10 @@ def execute(arg_list: list[str] | None = None):
     elif args.command == "embed":
         embed_and_prepare(AnnfluxSource(folder))
     elif args.command == "go":
-        exclusivity = args.exclusivity
         go_command(
             folder,
             args.start_labels,
-            exclusivity,
+            args.exclusivity,
             args.architecture,
             args.label_column_name,
         )

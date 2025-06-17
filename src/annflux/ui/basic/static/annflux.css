@@ -1,0 +1,179 @@
+/*
+ * Copyright 2025 Naturalis Biodiversity Center
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: black;
+    color: #cccccc;
+  }
+
+  span {
+    color: #cccccc;
+  }
+  #panel {    
+    padding: 2px;
+  }
+
+  #my_dataviz {
+    float: left;
+    background-color: black;
+  }
+
+  #map_control {   
+    height: 100%;
+    overflow-y: auto; 
+    padding: 2px;
+  }
+
+  #gallery {
+    height: 100%;
+    overflow-y: auto;
+    padding: 2px;
+  }
+
+  #gallery div {
+    /* max-height: 400px; */
+  }
+
+  .gallery {
+    vertical-align: top;
+  }
+
+  .gallery-label {
+    font-size: 12px;
+    font-family: "Courier New", Courier, monospace;
+  }
+
+  .quick_label {
+    font-size: 10px;
+    font-family: "Courier New", Courier, monospace;
+    background-color: blueviolet;
+    color: white;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+    padding: 2px;
+    text-decoration: none;
+  }
+
+  .quick_label_predicted {
+    font-size: 12px;
+    font-family: "Courier New", Courier, monospace;
+    background-color: orange;
+    color: #555;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    border-radius: 5px;
+    padding: 3px;
+    text-decoration: none;
+    
+  }
+  
+  .label_panel_label {
+    font-size: 12px;
+    font-family: "Courier New", Courier, monospace;
+    background-color: orange;
+    color: white;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+    padding: 2px;
+    text-decoration: none;
+  }
+
+  .quick_label_true {
+    font-size: 12px;
+    font-family: "Courier New", Courier, monospace;
+    background-color: green;
+    color: white;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+    padding: 2px;
+    text-decoration: none;
+  }
+
+  a {
+    text-decoration: none;
+    color: black;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+    background-color: white;
+  }
+
+  a.noButton {
+    text-decoration: none;
+    color:white;
+    -moz-border-radius: 0px;
+    -webkit-border-radius: 0px;
+    border-radius: 0px;
+    background-color: black;
+  }
+
+  .inline-help {
+    text-decoration:underline dotted white 1px;
+  }
+
+  #annflux_title {
+    font-size:3em;
+  }
+
+  .title_caps {
+    font-weight: bold;
+  }
+
+  #ui_log_last {
+    font-family: monospace;
+    border:1px solid white;
+    font-size:0.8em;
+    padding:0.1em;
+  }
+
+  #fullImage {
+    width:100%;
+    height:100%;
+  }
+
+  /* fullImageWrapper */
+
+  .img-overlay-wrap {
+    position: relative;
+    display: inline-block; /* <= shrinks container to image size */
+    transition: transform 150ms ease-in-out;
+  }
+  
+  .img-overlay-wrap img { /* <= optional, for responsiveness */
+     display: block;
+     max-width: 100%;
+     height: auto;
+  }
+  
+  .img-overlay-wrap svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  td:nth-child(1) {  
+    font-weight: bold;
+    min-width:12em;
+  }
+
+  .label_panel {
+    background-color: orange;
+  }
+
+  

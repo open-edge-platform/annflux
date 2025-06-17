@@ -1,4 +1,5 @@
 # Copyright 2025 Intel Corporation
+# Copyright 2025 Naturalis Biodiversity Center
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,6 +17,7 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
+from numpy._typing import NDArray
 
 
 class AnnFluxState(object):
@@ -73,7 +75,7 @@ class AnnFluxState(object):
     all_indices = None
     opt_knn_rank_exponent = None
     knn_rank_exponent = 3
-    label_array: Optional[np.array] = None
+    label_array: NDArray[list[str]] | None = None
     label_array_test = None
     labeled_indices = None
     labeled_test_indices = None

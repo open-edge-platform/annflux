@@ -229,7 +229,7 @@ class ClipFeatureExtractor(BaseFeatureExtractor, PeftTrainableMixin, OpenVinoMix
 
 
     def __init__(self):
-        self.huggingface_clip_name = os.getenv("HUGGINGFACE_CLIP_NAME")
+        self.huggingface_clip_name = os.getenv("HUGGINGFACE_CLIP_NAME", "wkcn/TinyCLIP-ViT-8M-16-Text-3M-YFCC15M")
 
         super().__init__()
 
@@ -271,6 +271,7 @@ class ClipFeatureExtractor(BaseFeatureExtractor, PeftTrainableMixin, OpenVinoMix
         try:
             ov_model = self.convert_model()
         except RuntimeError:
+            # TODO
             ov_model = None
 
         if ov_model:

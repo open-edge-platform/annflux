@@ -109,7 +109,7 @@ class Image_dataset(object):
             img = Image.open(os.path.join(self.root_dir, image_name))
         except Exception as e:
             print(e)
-            raise
+            img = Image.new("RGB", size=(224, 224))
 
         # load caption randomly
         # print(captions)

@@ -12,7 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+import os
+import tomllib
+from importlib.metadata import version
+from pathlib import Path
 from typing import Optional, List
+
+import annflux
 
 
 def remove_sys(list_: Optional[List[str]]):
@@ -26,6 +32,10 @@ def remove_sys(list_: Optional[List[str]]):
         if "sys:" not in x_:
             filtered_list.append(x_)
     return filtered_list
+
+
+def get_logger_by_name(name: str, mode: str = "a", level=logging.INFO):
+    return get_logger(os.path.join(os.getenv("LOG_FOLDER", "."), f"{name}.log"), mode, level)
 
 
 def get_logger(filename: str, mode: str = "a", level=logging.INFO) -> logging.Logger:
@@ -78,3 +88,18 @@ def str2bool(value, raise_exc=False):
         if raise_exc:
             raise ValueError('Expected "{}"'.format('", "'.join(_true_set | _false_set)))
     return result
+
+
+def get_version():
+    """
+    Get version of annflux
+    """
+    below_root = Path(os.path.dirname(__file__)) / ".." / ".." / ".."
+    is_package = "pyproject.toml" not in os.listdir(below_root)
+    return {
+        "version": version("annflux")
+        if is_package
+        else tomllib.load(open(below_root / "pyproject.toml", "rb"))["project"][
+            "version"
+        ]
+    }

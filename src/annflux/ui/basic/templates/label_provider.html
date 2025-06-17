@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Label provider</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://d3js.org/d3.v4.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css">
+    <style>
+        button {
+            margin: 5px;
+        }
+        table.dataTable tbody td input {
+            width: 100%;
+            border: none;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Label provider</h1>
+    <a href="/annflux">Home</a>
+    <table id="array-table" class="display" style="width:100%">
+        <thead>
+            <tr id="table-header"></tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <button id="fetch-array">Fetch Array</button>
+    <button id="save-array">Save Array</button>
+    <button id="add-row">Add Row</button>
+    <button id="add-column">Add Column</button>
+    <a href="/annflux">Back</a>
+
+    <script>
+        function addLabel(newLabel, parentLabel, exclusive) {
+            $.ajax({
+              url: "/label_defs",
+              type: "PUT",
+              success: function (response) {
+                location.reload();
+              },
+              data: JSON.stringify([newLabel, parentLabel, exclusive]),
+            });
+          }
+
+        let array2D = []; // 2D array to hold fetched data
+        let table; // DataTables instance
+
+        // REST API endpoints
+        const API_BASE_URL = ''; // Replace with your API base URL
+        const FETCH_URL = `${API_BASE_URL}/label_provider/data`;
+        const SAVE_URL = `${API_BASE_URL}/label_provider/data`;
+        let g_labels = [];
+        // Initialize DataTable
+        function initializeDataTable() {
+            table = $('#array-table').DataTable({
+                data: array2D,
+                columns: array2D[0]?.map((_, colIndex) => ({
+                    title: `Column ${colIndex + 1}`,
+                    render: function (data, type, row, meta) {
+                        let parent = meta.col > 2 ? array2D[meta.row][meta.col - 1] : null;
+                        if (type === 'display' && meta.col > 1 && g_labels.indexOf(data) == -1 && (g_labels.indexOf(parent) > -1 || parent === null)) {
+                            return `<a href="javascript:void(0)" onclick="addLabel('${data}', '${parent}', true)"
+                                data-row="${meta.row}" data-col="${meta.col}">${data}</a>`;
+                        }
+                        return data;
+                    }
+                })),
+                destroy: true, // Reinitialize DataTable if called multiple times
+                paging: true,
+                searching: true,
+                ordering: true,
+                autoWidth: true
+            });
+
+            // Update array2D on input changes
+            $('#array-table').on('input', 'input', function () {
+                const row = $(this).data('row');
+                const col = $(this).data('col');
+                array2D[row][col] = $(this).val();
+            });
+        }
+
+
+        // Fetch array data from REST API
+        $('#fetch-array').on('click', function () {
+            d3.csv(FETCH_URL, function (data) {
+                // Convert D3 parsed data into 2D array
+                array2D = data.map(Object.values);
+                initializeDataTable();
+            });
+        });
+
+        $.get("/label_defs", function (data) {
+            for(const [child,parent] of data["labels"]) {
+                g_labels.push(child);
+            }
+            console.log(g_labels);
+            $('#fetch-array').click();
+        });
+
+
+        // Save array data to REST API
+        $('#save-array').on('click', function () {
+            $.ajax({
+                url: SAVE_URL,
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(array2D),
+                success: function () {
+                    // alert('Array saved successfully!');
+                },
+                error: function () {
+                    alert('Error saving array data.');
+                }
+            });
+        });
+
+        // Add a new row to the array
+        $('#add-row').on('click', function () {
+            if (array2D.length > 0) {
+                const newRow = Array(array2D[0].length).fill(0); // Add a row of zeros
+                array2D.push(newRow);
+            } else {
+                array2D.push([0, 0]); // Default to a 3-column row if the array is empty
+            }
+            initializeDataTable();
+        });
+
+        // Add a new column to the array
+        $('#add-column').on('click', function () {
+            if (array2D.length > 0) {
+                array2D.forEach(row => row.push(0)); // Add a new column with zeros to each row
+            } else {
+                array2D.push([0]); // Default to a 1-column row if the array is empty
+            }
+            initializeDataTable();
+        });
+    </script>
+</body>
+</html>
