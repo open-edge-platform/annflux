@@ -1,4 +1,4 @@
-[AnnFlux Logo](src/annflux/ui/basic/static/annflux.png)
+![AnnFlux Logo](src/annflux/ui/basic/static/annflux.png)
 
 # [AnnFlux] Annotation flux
 ## A research tool for exploring and annotating large datasets with Active Learning 
