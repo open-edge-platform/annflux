@@ -27,14 +27,22 @@ See [CONTRIBUTING.md](CONTRIBUTING.md)
    ```bash
    pip install -e .
    ```
-   
-# Init project, compute features and embed
+# Examples
+
+## StreetSurfaceVis
+
+The public (Creative Commons Attribution Share Alike 4.0 International) road type dataset 'StreetSurfaceVis' (https://zenodo.org/records/11449977 / https://www.nature.com/articles/s41597-024-04295-9).
+
+See [StreetSurfaceVis](src/annflux/examples/streetsurfacevis.md)
+
+## From images folder    
+## Init project, compute features and embed
 
 `annflux go {PROJECT_FOLDER}`
 
 `PROJECT_FOLDER` should have at least a `images` folder
 
-# Example
+## Example
 
 Use an image dataset with a folder of images with a .jpg extension. A good size is 5,000 to 10,000 images.
 
