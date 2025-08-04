@@ -16,7 +16,7 @@ flask-limiter~=3.12
 flask-caching~=2.3.1
 tensorflow-cpu
 umap-learn~=0.5.7
-keras~=3.9.0
+keras~=3.11.1
 accelerate>=0.26.0
 transformers~=4.49.0
 peft
