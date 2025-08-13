@@ -16,11 +16,11 @@ flask-limiter~=3.12
 flask-caching~=2.3.1
 tensorflow-cpu
 umap-learn~=0.5.7
-keras~=3.9.0
+keras>=3.11.0,<3.12
 accelerate>=0.26.0
-transformers~=4.49.0
+transformers>=4.53.0,<4.54
 peft
 numpy~=2.1.3
 werkzeug~=3.1.3
-torch~=2.6.0
+torch>=2.7.1rc1,<2.8
 openvino
