@@ -3,7 +3,7 @@ name = "annflux"
 authors = [
     { name = "Laurens Hogeweg", email = "laurens.hogeweg@intel.com" },
 ]
-version = "1.0.1.0"
+version = "1.0.2.0"
 description = "This standalone tool provides a basic interface for interacting with large datasets so that they can be explored and annotated efficiently."
 requires-python = ">=3.11"
 dynamic = ["dependencies"]
