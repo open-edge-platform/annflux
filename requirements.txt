@@ -1,5 +1,5 @@
 pillow
-pandas~=2.2.3
+pandas~=2.3.2
 tqdm~=4.67.1
 requests~=2.32.3
 opencv-python~=4.11.0.86
