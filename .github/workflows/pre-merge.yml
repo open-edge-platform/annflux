@@ -15,11 +15,11 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       - name: Run Zizmor scan
-        uses: open-edge-platform/anomalib/.github/actions/security/zizmor@f60dd31a53407496508aa2db3165c8e8cd121a14
+        uses: open-edge-platform/anomalib/.github/actions/security/zizmor@fb7d494bf61c3806fb6497d435c7dcabd2ce8e04
         with:
           scan-scope: "changed"
           severity-level: "MEDIUM"
@@ -31,11 +31,11 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       - name: Run Bandit scan
-        uses: open-edge-platform/anomalib/.github/actions/security/bandit@f60dd31a53407496508aa2db3165c8e8cd121a14
+        uses: open-edge-platform/anomalib/.github/actions/security/bandit@fb7d494bf61c3806fb6497d435c7dcabd2ce8e04
         with:
           scan-scope: "changed"
           severity-level: "MEDIUM"
