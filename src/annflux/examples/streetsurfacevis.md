@@ -2,12 +2,14 @@ Use the public (Creative Commons Attribution Share Alike 4.0 International) road
 
 The dataset contains 9122 images of various road types.
 
+This example assumes you have created the "annflux" directory in your home directory, but it works for any base directory (adjust the paths in the commands below).
+
 Download the data
 ```bash
 # see https://zenodo.org/records/11449977
-mkdir ~/annflux/data/streetSurfaceVis
+mkdir -p ~/annflux/data/streetSurfaceVis
 cd ~/annflux/data/streetSurfaceVis
-curl https://zenodo.org/records/11449977/files/s_256.zip?download=1 > streetSurfaceVis.zip
+curl --location --output streetSurfaceVis.zip "https://zenodo.org/records/11449977/files/s_256.zip?download=1"
 unzip -j streetSurfaceVis.zip -d "images"
 # the original zip unfortunately contains two 0-bytes files
 find ~/annflux/data/streetSurfaceVis/images -size 0 -delete
